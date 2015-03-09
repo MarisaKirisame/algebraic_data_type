@@ -5,4 +5,4 @@ CONFIG -= qt
 
 SOURCES += main.cpp
 
-include(deployment.pri)
+QMAKE_CXXFLAGS += -std=c++1z
