@@ -13,6 +13,9 @@
 #include <boost/mpl/arg.hpp>
 #include <boost/mpl/unpack_args.hpp>
 #include <boost/mpl/apply.hpp>
+#include <boost/mpl/lambda.hpp>
+#include <boost/mpl/placeholders.hpp>
+//#include <boost/hana.hpp> //debian testing does not has high enough version of clang and hana is unable to detect clang in unstable. Got to wait for a while.
 template< typename ... TR >
 struct constructor_trait { typedef std::tuple< TR ... > type; };
 struct self { };
@@ -44,8 +47,14 @@ struct to_variant
     };
     template< typename T >
     struct apply : inner::apply< typename boost::mpl::push_back< T, boost::mpl::void_ >::type > { };
-
 };
+
+template< typename SELF_TYPE, typename T >
+struct unfold_recursive { typedef T type; }; //Open: Add more specialization to deal with different case.
+
+template< typename SELF_TYPE >
+struct unfold_recursive< SELF_TYPE, recursive_indicator > { typedef boost::recursive_wrapper< SELF_TYPE > type; };
+
 template< typename ... TR >
 struct algebraic_data_type
 {
@@ -53,10 +62,20 @@ struct algebraic_data_type
     {
         template< typename F, typename T >
         struct apply
-        { typedef typename boost::mpl::push_back< F, std::pair< boost::mpl::int_< boost::mpl::size< F >::value >, T > >::type type; };
+        {
+            typedef typename
+            boost::mpl::push_back
+            <
+                F,
+                std::pair
+                <
+                    boost::mpl::int_< boost::mpl::size< F >::value >,
+                    typename unfold_recursive< algebraic_data_type< TR ... >, T >::type
+                >
+            >::type type;
+        };
     };
-    typedef typename to_variant::template apply< typename boost::mpl::fold< boost::mpl::vector< TR ... >, boost::mpl::vector< >, add_pair >::type > type;
-    boost::variant< TR ... > data;
+    typename to_variant::template apply< typename boost::mpl::fold< boost::mpl::vector< TR ... >, boost::mpl::vector< >, add_pair >::type >::type data;
     template< size_t which, typename ... T >
     struct get { typedef constructor_indicator< which, T ... > data; };
     template< size_t I, typename ... CIT, typename ... T >
@@ -67,7 +86,6 @@ struct algebraic_data_type
 
 int main( )
 {
-    typedef algebraic_data_type< size_t, int, int >::type type;
-    std::declval< type >();
+    std::declval< decltype( algebraic_data_type< recursive_indicator >::data ) >( );
     return 0;
 }
