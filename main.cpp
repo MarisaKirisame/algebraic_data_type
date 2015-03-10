@@ -15,20 +15,18 @@
 #include <boost/mpl/apply.hpp>
 #include <boost/mpl/lambda.hpp>
 #include <boost/mpl/placeholders.hpp>
+#include <memory>
 //#include <boost/hana.hpp> //debian testing does not has high enough version of clang and hana is unable to detect clang in unstable. Got to wait for a while.
-template< typename ... TR >
-struct constructor_trait { typedef std::tuple< TR ... > type; };
-struct self { };
-struct S { };
-struct O { };
-struct TRUE { };
-struct FALSE { };
-struct nat { boost::variant< std::pair< S, std::unique_ptr< nat > >, O > v; };
-struct Bool { boost::variant< TRUE, FALSE > v; };
 struct recursive_indicator { };
-template< typename T > struct tag { };
-template< size_t which, typename ... parameter_type >
-struct constructor_indicator { };
+
+template< typename CONSTRUCTOR_TYPE, size_t which, typename ... PARAMETER_TYPE >
+struct constructor_indicator
+{
+    template< typename ARG >
+    CONSTRUCTOR_TYPE operator ( )( ARG && arg ) const
+    { return CONSTRUCTOR_TYPE( std::make_pair( boost::mpl::int_< which >( ), std::forward< ARG >( arg ) ) ); }
+};
+
 struct to_variant
 {
     struct inner
@@ -58,6 +56,9 @@ struct unfold_recursive< SELF_TYPE, recursive_indicator > { typedef boost::recur
 template< typename ... TR >
 struct algebraic_data_type
 {
+    template< typename T >
+    algebraic_data_type( T && t ) : data( std::forward< T >( t ) ) { }
+    typedef algebraic_data_type< TR ... > self_type;
     struct add_pair
     {
         template< typename F, typename T >
@@ -70,22 +71,29 @@ struct algebraic_data_type
                 std::pair
                 <
                     boost::mpl::int_< boost::mpl::size< F >::value >,
-                    typename unfold_recursive< algebraic_data_type< TR ... >, T >::type
+                    typename unfold_recursive< self_type, T >::type
                 >
             >::type type;
         };
     };
-    typename to_variant::template apply< typename boost::mpl::fold< boost::mpl::vector< TR ... >, boost::mpl::vector< >, add_pair >::type >::type data;
+    typedef typename boost::mpl::fold< boost::mpl::vector< TR ... >, boost::mpl::vector< >, add_pair >::type variant_arg_type;
+    typename to_variant::template apply< variant_arg_type >::type data;
     template< size_t which, typename ... T >
-    struct get { typedef constructor_indicator< which, T ... > data; };
-    template< size_t I, typename ... CIT, typename ... T >
-    algebraic_data_type( const constructor_indicator< I, CIT ... > & CI, const T & ... t ) : data( repack< CIT ... >( t ... ) ) { }
-    template< typename ... CIT, typename ... T >
-    auto static repack( const T & ... t ) { }
+    struct get { typedef constructor_indicator< self_type, which, T ... > type; };
 };
 
+struct unit { }; //Fuck void
+typedef algebraic_data_type< unit, unit > Bool;
+typedef algebraic_data_type< unit, recursive_indicator > Nat;
+#define DECLARE_CONSTRUCTOR( ADT, WHICH, NAME, FREE_PARAMETER ) \
+    template< typename ... FREE_PARAMETER > \
+    using NAME = typename ADT::get< WHICH, FREE_PARAMETER ... >::type
+DECLARE_CONSTRUCTOR( Bool, 0, True, T );
+DECLARE_CONSTRUCTOR( Bool, 1, False, T );
+DECLARE_CONSTRUCTOR( Nat, 0, O, T );
+DECLARE_CONSTRUCTOR( Nat, 1, S, T );
 int main( )
 {
-    std::declval< decltype( algebraic_data_type< recursive_indicator >::data ) >( );
+    std::declval< decltype( Nat::data ) >( );
     return 0;
 }
