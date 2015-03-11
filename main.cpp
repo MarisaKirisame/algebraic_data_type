@@ -16,10 +16,11 @@
 #include <boost/mpl/lambda.hpp>
 #include <boost/mpl/placeholders.hpp>
 #include <memory>
+#include "../misc/expansion.hpp"
 //#include <boost/hana.hpp> //debian testing does not has high enough version of clang and hana is unable to detect clang in unstable. Got to wait for a while.
 struct recursive_indicator { };
 
-template< typename CONSTRUCTOR_TYPE, size_t which, typename ... PARAMETER_TYPE >
+template< typename CONSTRUCTOR_TYPE, size_t which >
 struct constructor_indicator
 {
     template< typename ARG >
@@ -78,22 +79,40 @@ struct algebraic_data_type
     };
     typedef typename boost::mpl::fold< boost::mpl::vector< TR ... >, boost::mpl::vector< >, add_pair >::type variant_arg_type;
     typename to_variant::template apply< variant_arg_type >::type data;
-    template< size_t which, typename ... T >
-    struct get { typedef constructor_indicator< self_type, which, T ... > type; };
+    template< size_t which >
+    struct get { typedef constructor_indicator< self_type, which > type; };
+    template< typename T, typename ret_type >
+    struct match_visitor : boost::static_visitor< ret_type >
+    {
+        const T & t;
+        match_visitor( const T & t ) : t( t ) { }
+        template< typename ARG >
+        ret_type operator( )( const ARG & arg ) const { return t( typename get< ARG::first_type::value >::type( ), arg.second ); }
+    };
+    template< typename T >
+    auto simple_match( const T & t )
+    {
+        typedef decltype(
+            t(  std::declval< typename get< 0 >::type >( ),
+                std::declval< typename boost::mpl::front< variant_arg_type >::type::second_type >( ) ) ) ret_type;
+        match_visitor< T, ret_type > smv { t };
+        return data.apply_visitor( smv );
+    }
 };
 
 struct unit { }; //Fuck void
 typedef algebraic_data_type< unit, unit > Bool;
 typedef algebraic_data_type< unit, recursive_indicator > Nat;
-#define DECLARE_CONSTRUCTOR( ADT, WHICH, NAME, FREE_PARAMETER ) \
-    template< typename ... FREE_PARAMETER > \
-    using NAME = typename ADT::get< WHICH, FREE_PARAMETER ... >::type
-DECLARE_CONSTRUCTOR( Bool, 0, True, T );
-DECLARE_CONSTRUCTOR( Bool, 1, False, T );
-DECLARE_CONSTRUCTOR( Nat, 0, O, T );
-DECLARE_CONSTRUCTOR( Nat, 1, S, T );
+#define DECLARE_CONSTRUCTOR( ADT, WHICH, NAME ) using NAME = typename ADT::get< WHICH >::type
+
+DECLARE_CONSTRUCTOR( Bool, 0, True );
+DECLARE_CONSTRUCTOR( Bool, 1, False );
+DECLARE_CONSTRUCTOR( Nat, 0, O );
+DECLARE_CONSTRUCTOR( Nat, 1, S );
+
 int main( )
 {
-    std::declval< decltype( Nat::data ) >( );
+    Nat n = S()(S()(O()(unit())));
+    assert( n.simple_match( misc::make_expansion( [](const S &, const auto & s) { return true; }, [](const O &, const auto & s) { return false; }) ) );
     return 0;
 }
