@@ -98,13 +98,22 @@ template< >
 struct pattern_tester< >
 { static bool match_pattern( const std::tuple< > & ) { return true; } };
 
-template< typename F, typename ... T, typename ... REST >
-auto expand_tuple( const F & f, const std::tuple< T ... > & t, size_t nth, const REST & ... r )
-{ return std::tuple_size< t >::value == nth + 1 ? f( r ..., std::get< nth >( t ) ) : expand_tuple( f, t, nth + 1, r ..., std::get< nth >( t ) ); }
+template< size_t nth, typename F, typename ... T, typename ... REST >
+auto expand_tuple_inner( const F & f, const std::tuple< T ... > & t, const REST & ... r )
+{
+    return misc::make_expansion(
+        [&]( const auto & t, boost::mpl::true_ ) { return f( r ..., std::get< nth >( t ) ); },
+        [&]( const auto & t, boost::mpl::false_ ) { return expand_tuple_inner< nth + 1 >( f, t, r ..., std::get< nth >( t ) ); } )
+            ( t, boost::mpl::bool_< std::tuple_size< std::tuple< T ... > >::value == nth + 1 >( ) );
+}
 
-template< typename F >
-auto expand_tuple( const F & f, const std::tuple< > & t, size_t nth )
-{ return F( ); }
+template< size_t, typename F >
+auto expand_tuple_inner( const F & f, const std::tuple< > & )
+{ return f( ); }
+
+template< typename F, typename ... T >
+auto expand_tuple( const F & f, const std::tuple< T ... > & t )
+{ return expand_tuple_inner< 0 >( f, t ); }
 
 struct ignore_tie
 {
@@ -115,7 +124,7 @@ struct ignore_tie
 
 template< typename ... T >
 auto tuple_pop( const std::tuple< T ... > & t )
-{ return expand_tuple( ignore_tie( ), t, 0 ); }
+{ return expand_tuple( ignore_tie( ), t ); }
 
 template< typename FIRST, typename ... REST >
 struct pattern_tester< FIRST, REST ... >
@@ -197,6 +206,7 @@ DECLARE_CONSTRUCTOR( Nat, 1, S, T );
 
 int main( )
 {
+    std::declval< decltype( tuple_pop( std::make_tuple( 1, ' ', 3 ) ) ) >( );
     Nat n = S<>()(S<>()(O<>()(unit())));
     assert( n.simple_match( misc::make_expansion( [](const S<> &, const auto &) { return true; }, [](const O<> &, const auto &) { return false; }) ) );
     return 0;
