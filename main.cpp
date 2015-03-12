@@ -146,8 +146,8 @@ struct pattern_matcher< constructor_indicator< self_type, which, L, R > >
                 >( s.data ).second;
 
         return pattern_matcher< L >::match(
-                p.first,
-                arg_loader< R, decltype( p.second ), F > { p.second, f },
+                std::get< 0 >( p ),
+                arg_loader< R, decltype( std::get< 1 >( p ) ), F > { std::get< 1 >( p ), f },
                 res ... );
     }
 
@@ -304,7 +304,7 @@ struct matcher
 struct unit { }; //Fuck void
 typedef algebraic_data_type< unit, unit > Bool;
 typedef algebraic_data_type< unit, recursive_indicator > Nat;
-typedef algebraic_data_type< std::pair< bool, bool > > pair_bool;
+typedef algebraic_data_type< std::tuple< bool, bool > > pair_bool;
 #define DECLARE_CONSTRUCTOR( ADT, WHICH, NAME, UNUSED ) \
 template< typename ... UNUSED > \
 using NAME = typename ADT::get_constructor< WHICH, UNUSED ... >::type
