@@ -20,6 +20,7 @@
 //#include <boost/hana.hpp> //debian testing does not has high enough version of clang and hana is unable to detect clang in unstable. Got to wait for a while.
 struct recursive_indicator { };
 struct wildstar;
+
 template< typename CONSTRUCTOR_TYPE, size_t which, typename ... TR >
 struct constructor_indicator
 {
@@ -66,6 +67,9 @@ struct pattern_tester< wildstar >
     static bool match_pattern( const ARG & ) { return true; }
 };
 
+template< typename ... TR >
+struct algebraic_data_type;
+
 template< typename self_type, size_t which, typename ... PR >
 struct pattern_tester< constructor_indicator< self_type, which, PR ... > >
 {
@@ -78,8 +82,15 @@ struct pattern_tester< constructor_indicator< self_type, which, PR ... > >
             return L::which_constructor == which && pattern_tester< PR ... >::match_pattern( r );
         }
     };
-    template< typename ARG >
-    static bool match_pattern( const ARG & s )  { return s.simple_match( tester_helper( ) ); }
+
+    template< typename ... ARG >
+    static bool match_pattern( const algebraic_data_type< ARG ... > & s ) { return simple_match( s, tester_helper( ) ); }
+
+    template< typename ... ARG >
+    static bool match_pattern( const boost::recursive_wrapper< algebraic_data_type< ARG ... > > & s ) { return simple_match( s, tester_helper( ) ); }
+
+    template< typename T >
+    static bool match_pattern( const T & ) { return false; }
 };
 
 template< typename FIRST, typename SECOND >
@@ -171,20 +182,26 @@ struct algebraic_data_type
         template< typename ARG >
         ret_type operator( )( const ARG & arg ) const { return t( typename get< ARG::first_type::value >::type( ), arg.second ); }
     };
-    template< typename T >
-    auto simple_match( const T & t )
-    {
-        typedef decltype(
-            t(  std::declval< typename get< 0 >::type >( ),
-                std::declval< typename boost::mpl::front< variant_arg_type >::type::second_type >( ) ) ) ret_type;
-        match_visitor< T, ret_type > smv { t };
-        return data.apply_visitor( smv );
-    }
 
     template< typename T >
     bool match_pattern( ) const { return pattern_tester< T >::match_pattern( * this ); }
 
 };
+
+template< typename ... TR, typename T >
+auto simple_match( const algebraic_data_type< TR ... > & adt, const T & t )
+{
+    typedef algebraic_data_type< TR ... > adt_type;
+    typedef decltype(
+        t(  std::declval< typename adt_type::template get< 0 >::type >( ),
+            std::declval< typename boost::mpl::front< typename adt_type::variant_arg_type >::type::second_type >( ) ) ) ret_type;
+    typename adt_type::template match_visitor< T, ret_type > smv { t };
+    return adt.data.apply_visitor( smv );
+}
+
+template< typename L, typename R >
+auto simple_match( const boost::recursive_wrapper< L > & l, const R & r )
+{ return simple_match( l.get( ), r ); }
 
 template< typename match_expression >
 struct matcher
@@ -206,8 +223,8 @@ DECLARE_CONSTRUCTOR( Nat, 1, S, T );
 
 int main( )
 {
-    std::declval< decltype( tuple_pop( std::make_tuple( 1, ' ', 3 ) ) ) >( );
     Nat n = S<>()(S<>()(O<>()(unit())));
-    assert( n.simple_match( misc::make_expansion( [](const S<> &, const auto &) { return true; }, [](const O<> &, const auto &) { return false; }) ) );
+    assert( simple_match( n, misc::make_expansion( [](const S<> &, const auto &) { return true; }, [](const O<> &, const auto &) { return false; }) ) );
+    assert( n.match_pattern< S< S< wildstar > > >( ) );
     return 0;
 }
