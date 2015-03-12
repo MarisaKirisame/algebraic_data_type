@@ -120,22 +120,34 @@ struct pattern_matcher< constructor_indicator< self_type, which, T > >
     { return match( s.get( ), f, res ... ); }
 };
 
-template< typename self_type, size_t which, typename ... T >
-struct pattern_matcher< constructor_indicator< self_type, which, T ... > >
+template< typename EXP, typename STORE, typename F >
+struct arg_loader
+{
+    const STORE & sec;
+    const F & f;
+    template< typename ... ARG >
+    auto operator ( )( const ARG & ... arg ) const
+    { return pattern_matcher< EXP >::match( sec, f, arg ... ); }
+};
+
+template< typename self_type, size_t which, typename L, typename R >
+struct pattern_matcher< constructor_indicator< self_type, which, L, R > >
 {
     template< typename ... ARG, typename F, typename ... REST >
     static auto match( const algebraic_data_type< ARG ... > & s, const F & f, const REST & ... res )
     {
-        return pattern_matcher< T >::match(
-                boost::get
+        auto p = boost::get
                 <
                     std::pair
                     <
                         boost::mpl::int_< which >,
                         typename algebraic_data_type< ARG ... >::template constructor_parameter_type< which >::type
                     >
-                >( s.data ).second,
-                f,
+                >( s.data ).second;
+
+        return pattern_matcher< L >::match(
+                p.first,
+                arg_loader< R, decltype( p.second ), F > { p.second, f },
                 res ... );
     }
 
@@ -292,6 +304,7 @@ struct matcher
 struct unit { }; //Fuck void
 typedef algebraic_data_type< unit, unit > Bool;
 typedef algebraic_data_type< unit, recursive_indicator > Nat;
+typedef algebraic_data_type< std::pair< bool, bool > > pair_bool;
 #define DECLARE_CONSTRUCTOR( ADT, WHICH, NAME, UNUSED ) \
 template< typename ... UNUSED > \
 using NAME = typename ADT::get_constructor< WHICH, UNUSED ... >::type
@@ -300,13 +313,12 @@ DECLARE_CONSTRUCTOR( Bool, 0, True, T );
 DECLARE_CONSTRUCTOR( Bool, 1, False, T );
 DECLARE_CONSTRUCTOR( Nat, 0, O, T );
 DECLARE_CONSTRUCTOR( Nat, 1, S, T );
+DECLARE_CONSTRUCTOR( pair_bool, 0, pb, T );
 
 int main( )
 {
-    Nat n = O<>()(unit());
-    assert( ! simple_match( n, misc::make_expansion( [](const S<> &, const auto &) { return true; }, [](const O<> &, const auto &) { return false; }) ) );
-    assert( ! n.match_pattern< S< S< wildstar > > >( ) );
-    assert( n.match< O< arg > >( []( const unit & ){ return true; } ) );
+    pair_bool p = pb<>( )( std::make_pair( true, false ) );
+    assert( ( p.match< pb< arg, arg > >( []( bool l, bool r ) { return l && ! r; } ) ) );
     std::cout << "pass!" << std::endl;
     return 0;
 }
