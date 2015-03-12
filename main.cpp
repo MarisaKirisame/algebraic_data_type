@@ -20,7 +20,7 @@
 //#include <boost/hana.hpp> //debian testing does not has high enough version of clang and hana is unable to detect clang in unstable. Got to wait for a while.
 struct recursive_indicator { };
 struct wildstar;
-
+struct arg { };
 template< typename CONSTRUCTOR_TYPE, size_t which, typename ... TR >
 struct constructor_indicator
 {
@@ -62,6 +62,13 @@ struct pattern_tester;
 
 template< >
 struct pattern_tester< wildstar >
+{
+    template< typename ARG >
+    static bool match_pattern( const ARG & ) { return true; }
+};
+
+template< >
+struct pattern_tester< arg >
 {
     template< typename ARG >
     static bool match_pattern( const ARG & ) { return true; }
@@ -223,8 +230,9 @@ DECLARE_CONSTRUCTOR( Nat, 1, S, T );
 
 int main( )
 {
-    Nat n = S<>()(S<>()(O<>()(unit())));
-    assert( simple_match( n, misc::make_expansion( [](const S<> &, const auto &) { return true; }, [](const O<> &, const auto &) { return false; }) ) );
-    assert( n.match_pattern< S< S< wildstar > > >( ) );
+    Nat n = O<>()(unit());
+    assert( ! simple_match( n, misc::make_expansion( [](const S<> &, const auto &) { return true; }, [](const O<> &, const auto &) { return false; }) ) );
+    assert( ! n.match_pattern< S< S< wildstar > > >( ) );
+    assert( n.match_pattern< O< wildstar > >( ) );
     return 0;
 }
