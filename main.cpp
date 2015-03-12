@@ -19,10 +19,12 @@
 #include "../misc/expansion.hpp"
 //#include <boost/hana.hpp> //debian testing does not has high enough version of clang and hana is unable to detect clang in unstable. Got to wait for a while.
 struct recursive_indicator { };
-
-template< typename CONSTRUCTOR_TYPE, size_t which >
+struct wildstar;
+template< typename CONSTRUCTOR_TYPE, size_t which, typename ... TR >
 struct constructor_indicator
 {
+    constexpr static size_t which_constructor = which;
+    typedef CONSTRUCTOR_TYPE constructor_type;
     template< typename ARG >
     CONSTRUCTOR_TYPE operator ( )( ARG && arg ) const
     { return CONSTRUCTOR_TYPE( std::make_pair( boost::mpl::int_< which >( ), std::forward< ARG >( arg ) ) ); }
@@ -54,6 +56,75 @@ struct unfold_recursive { typedef T type; }; //Open: Add more specialization to 
 template< typename SELF_TYPE >
 struct unfold_recursive< SELF_TYPE, recursive_indicator > { typedef boost::recursive_wrapper< SELF_TYPE > type; };
 
+template< typename ... T >
+struct pattern_tester;
+
+template< >
+struct pattern_tester< wildstar >
+{
+    template< typename ARG >
+    static bool match_pattern( const ARG & ) { return true; }
+};
+
+template< typename self_type, size_t which, typename ... PR >
+struct pattern_tester< constructor_indicator< self_type, which, PR ... > >
+{
+    struct tester_helper
+    {
+        template< typename L, typename R >
+        bool operator ( )( const L &, const R & r ) const
+        {
+            static_assert( std::is_same< typename L::constructor_type, self_type >::value, "Constructor Mismatch" );
+            return L::which_constructor == which && pattern_tester< PR ... >::match_pattern( r );
+        }
+    };
+    template< typename ARG >
+    static bool match_pattern( const ARG & s )  { return s.simple_match( tester_helper( ) ); }
+};
+
+template< typename FIRST, typename SECOND >
+struct pattern_tester< FIRST, SECOND >
+{
+    template< typename FST, typename SND >
+    static bool match_pattern( const std::pair< FST, SND > & p )
+    { return FST::match_pattern( p.first ) && SND::match_pattern( p.second ); }
+
+    template< typename FST, typename SND >
+    static bool match_pattern( const std::tuple< FST, SND > & p )
+    { return FST::match_pattern( p.first ) && SND::match_pattern( p.second ); }
+};
+
+template< >
+struct pattern_tester< >
+{ static bool match_pattern( const std::tuple< > & ) { return true; } };
+
+template< typename F, typename ... T, typename ... REST >
+auto expand_tuple( const F & f, const std::tuple< T ... > & t, size_t nth, const REST & ... r )
+{ return std::tuple_size< t >::value == nth + 1 ? f( r ..., std::get< nth >( t ) ) : expand_tuple( f, t, nth + 1, r ..., std::get< nth >( t ) ); }
+
+template< typename F >
+auto expand_tuple( const F & f, const std::tuple< > & t, size_t nth )
+{ return F( ); }
+
+struct ignore_tie
+{
+    template< typename FIRST, typename ... REST >
+    auto operator ( )( const FIRST &, const REST & ... r ) const
+    { return std::tie( r ... ); }
+};
+
+template< typename ... T >
+auto tuple_pop( const std::tuple< T ... > & t )
+{ return expand_tuple( ignore_tie( ), t, 0 ); }
+
+template< typename FIRST, typename ... REST >
+struct pattern_tester< FIRST, REST ... >
+{
+    template< typename ... T >
+    static bool match_pattern( const std::tuple< T ... > & t )
+    { return FIRST::match_pattern( std::get< 0 >( t ) ) && pattern_tester< REST ... >::match_pattern( tuple_pop( t ) ); }//TODO: Add Tuple_pop, which rely on expand_tuple
+};
+
 template< typename ... TR >
 struct algebraic_data_type
 {
@@ -79,8 +150,10 @@ struct algebraic_data_type
     };
     typedef typename boost::mpl::fold< boost::mpl::vector< TR ... >, boost::mpl::vector< >, add_pair >::type variant_arg_type;
     typename to_variant::template apply< variant_arg_type >::type data;
-    template< size_t which >
-    struct get { typedef constructor_indicator< self_type, which > type; };
+
+    template< size_t which, typename ... PR >
+    struct get { typedef constructor_indicator< self_type, which, PR ... > type; };
+
     template< typename T, typename ret_type >
     struct match_visitor : boost::static_visitor< ret_type >
     {
@@ -98,21 +171,33 @@ struct algebraic_data_type
         match_visitor< T, ret_type > smv { t };
         return data.apply_visitor( smv );
     }
+
+    template< typename T >
+    bool match_pattern( ) const { return pattern_tester< T >::match_pattern( * this ); }
+
+};
+
+template< typename match_expression >
+struct matcher
+{
+
 };
 
 struct unit { }; //Fuck void
 typedef algebraic_data_type< unit, unit > Bool;
 typedef algebraic_data_type< unit, recursive_indicator > Nat;
-#define DECLARE_CONSTRUCTOR( ADT, WHICH, NAME ) using NAME = typename ADT::get< WHICH >::type
+#define DECLARE_CONSTRUCTOR( ADT, WHICH, NAME, UNUSED ) \
+template< typename ... UNUSED > \
+using NAME = typename ADT::get< WHICH, UNUSED ... >::type
 
-DECLARE_CONSTRUCTOR( Bool, 0, True );
-DECLARE_CONSTRUCTOR( Bool, 1, False );
-DECLARE_CONSTRUCTOR( Nat, 0, O );
-DECLARE_CONSTRUCTOR( Nat, 1, S );
+DECLARE_CONSTRUCTOR( Bool, 0, True, T );
+DECLARE_CONSTRUCTOR( Bool, 1, False, T );
+DECLARE_CONSTRUCTOR( Nat, 0, O, T );
+DECLARE_CONSTRUCTOR( Nat, 1, S, T );
 
 int main( )
 {
-    Nat n = S()(S()(O()(unit())));
-    assert( n.simple_match( misc::make_expansion( [](const S &, const auto & s) { return true; }, [](const O &, const auto & s) { return false; }) ) );
+    Nat n = S<>()(S<>()(O<>()(unit())));
+    assert( n.simple_match( misc::make_expansion( [](const S<> &, const auto &) { return true; }, [](const O<> &, const auto &) { return false; }) ) );
     return 0;
 }
