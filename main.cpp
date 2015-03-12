@@ -77,6 +77,73 @@ struct pattern_tester< arg >
 template< typename ... TR >
 struct algebraic_data_type;
 
+template< typename ... T >
+struct pattern_matcher;
+
+template< >
+struct pattern_matcher< wildstar >
+{
+    template< typename EXP, typename F, typename ... ARG >
+    static auto match( const EXP &, const F & f, const ARG & ... rst )
+    { return f( rst ... ); }
+};
+
+template< >
+struct pattern_matcher< arg >
+{
+    template< typename EXP, typename F, typename ... ARG >
+    static auto match( const EXP & e, const F & f, const ARG & ... rst )
+    { return f( rst ..., e ); }
+};
+
+template< typename self_type, size_t which, typename T >
+struct pattern_matcher< constructor_indicator< self_type, which, T > >
+{
+    template< typename ... ARG, typename F, typename ... REST >
+    static auto match( const algebraic_data_type< ARG ... > & s, const F & f, const REST & ... res )
+    {
+        return pattern_matcher< T >::match(
+                boost::get
+                <
+                    std::pair
+                    <
+                        boost::mpl::int_< which >,
+                        typename algebraic_data_type< ARG ... >::template constructor_parameter_type< which >::type
+                    >
+                >( s.data ).second,
+                f,
+                res ... );
+    }
+
+    template< typename ... ARG, typename F, typename ... REST >
+    static auto match( const boost::recursive_wrapper< algebraic_data_type< ARG ... > > & s, const F & f, const REST & ... res )
+    { return match( s.get( ), f, res ... ); }
+};
+
+template< typename self_type, size_t which, typename ... T >
+struct pattern_matcher< constructor_indicator< self_type, which, T ... > >
+{
+    template< typename ... ARG, typename F, typename ... REST >
+    static auto match( const algebraic_data_type< ARG ... > & s, const F & f, const REST & ... res )
+    {
+        return pattern_matcher< T >::match(
+                boost::get
+                <
+                    std::pair
+                    <
+                        boost::mpl::int_< which >,
+                        typename algebraic_data_type< ARG ... >::template constructor_parameter_type< which >::type
+                    >
+                >( s.data ).second,
+                f,
+                res ... );
+    }
+
+    template< typename ... ARG, typename F, typename ... REST >
+    static auto match( const boost::recursive_wrapper< algebraic_data_type< ARG ... > > & s, const F & f, const REST & ... res )
+    { return match( s.get( ), f, res ... ); }
+};
+
 template< typename self_type, size_t which, typename ... PR >
 struct pattern_tester< constructor_indicator< self_type, which, PR ... > >
 {
@@ -149,7 +216,7 @@ struct pattern_tester< FIRST, REST ... >
 {
     template< typename ... T >
     static bool match_pattern( const std::tuple< T ... > & t )
-    { return FIRST::match_pattern( std::get< 0 >( t ) ) && pattern_tester< REST ... >::match_pattern( tuple_pop( t ) ); }//TODO: Add Tuple_pop, which rely on expand_tuple
+    { return FIRST::match_pattern( std::get< 0 >( t ) ) && pattern_tester< REST ... >::match_pattern( tuple_pop( t ) ); }
 };
 
 template< typename ... TR >
@@ -179,7 +246,11 @@ struct algebraic_data_type
     typename to_variant::template apply< variant_arg_type >::type data;
 
     template< size_t which, typename ... PR >
-    struct get { typedef constructor_indicator< self_type, which, PR ... > type; };
+    struct get_constructor { typedef constructor_indicator< self_type, which, PR ... > type; };
+
+    template< size_t which >
+    struct constructor_parameter_type
+    { typedef typename boost::mpl::template at_c< variant_arg_type, which >::type::second_type type; };
 
     template< typename T, typename ret_type >
     struct match_visitor : boost::static_visitor< ret_type >
@@ -187,12 +258,14 @@ struct algebraic_data_type
         const T & t;
         match_visitor( const T & t ) : t( t ) { }
         template< typename ARG >
-        ret_type operator( )( const ARG & arg ) const { return t( typename get< ARG::first_type::value >::type( ), arg.second ); }
+        ret_type operator( )( const ARG & arg ) const { return t( typename get_constructor< ARG::first_type::value >::type( ), arg.second ); }
     };
 
     template< typename T >
     bool match_pattern( ) const { return pattern_tester< T >::match_pattern( * this ); }
 
+    template< typename MATCH_EXP, typename F >
+    auto match( const F & f ) const { return pattern_matcher< MATCH_EXP >::match( *this, f ); }
 };
 
 template< typename ... TR, typename T >
@@ -200,7 +273,7 @@ auto simple_match( const algebraic_data_type< TR ... > & adt, const T & t )
 {
     typedef algebraic_data_type< TR ... > adt_type;
     typedef decltype(
-        t(  std::declval< typename adt_type::template get< 0 >::type >( ),
+        t(  std::declval< typename adt_type::template get_constructor< 0 >::type >( ),
             std::declval< typename boost::mpl::front< typename adt_type::variant_arg_type >::type::second_type >( ) ) ) ret_type;
     typename adt_type::template match_visitor< T, ret_type > smv { t };
     return adt.data.apply_visitor( smv );
@@ -221,7 +294,7 @@ typedef algebraic_data_type< unit, unit > Bool;
 typedef algebraic_data_type< unit, recursive_indicator > Nat;
 #define DECLARE_CONSTRUCTOR( ADT, WHICH, NAME, UNUSED ) \
 template< typename ... UNUSED > \
-using NAME = typename ADT::get< WHICH, UNUSED ... >::type
+using NAME = typename ADT::get_constructor< WHICH, UNUSED ... >::type
 
 DECLARE_CONSTRUCTOR( Bool, 0, True, T );
 DECLARE_CONSTRUCTOR( Bool, 1, False, T );
@@ -233,6 +306,7 @@ int main( )
     Nat n = O<>()(unit());
     assert( ! simple_match( n, misc::make_expansion( [](const S<> &, const auto &) { return true; }, [](const O<> &, const auto &) { return false; }) ) );
     assert( ! n.match_pattern< S< S< wildstar > > >( ) );
-    assert( n.match_pattern< O< wildstar > >( ) );
+    assert( n.match< O< arg > >( []( const unit & ){ return true; } ) );
+    std::cout << "pass!" << std::endl;
     return 0;
 }
