@@ -159,6 +159,14 @@ struct pattern_matcher< constructor_indicator< self_type, which, L, R > >
     { return match( s.get( ), f, res ... ); }
 };
 
+template< >
+struct pattern_matcher<  >
+{
+    template< typename EXP, typename F, typename ... ARG >
+    static auto match( const EXP & e, const F & f, const ARG & ... rst )
+    { return f( rst ..., e ); }
+};
+
 template< size_t, typename F >
 auto expand_tuple_inner( const F & f, const std::tuple< > & )
 { return f( ); }
@@ -236,6 +244,28 @@ struct pattern_matcher< constructor_indicator< self_type, which, L, R ... > >
     template< typename ... ARG, typename F, typename ... REST >
     static auto match( const boost::recursive_wrapper< algebraic_data_type< ARG ... > > & s, const F & f, const REST & ... res )
     { return match( s.get( ), f, res ... ); }
+};
+
+template< typename ... match_expression > struct matcher { };
+
+template< typename T >
+struct pattern_matcher< matcher< T > >
+{
+    template< typename EXP, typename F, typename ... REST >
+    static auto match( const EXP & exp, const F & f, const REST & ... res )
+    { return pattern_matcher< T >::match( exp, f, res ... ); }
+};
+
+template< typename FST, typename ... SND >
+struct pattern_matcher< matcher< FST, SND ... > >
+{
+    template< typename ... T, typename F, typename ... REST >
+    static auto match( const algebraic_data_type< T ... > & exp, const F & f, const REST & ... res )
+    { return exp.template match_pattern< FST >( ) ? pattern_matcher< FST >::match( exp, f, res ... ) : pattern_matcher< matcher< SND ... > >::match( exp, f, res ... ); }
+
+    template< typename ... T, typename F, typename ... REST >
+    static auto match( const boost::recursive_wrapper< algebraic_data_type< T ... > > & exp, const F & f, const REST & ... res )
+    { return match( exp.get( ), f, res ... ); }
 };
 
 template< typename self_type, size_t which, typename ... PR >
@@ -348,12 +378,6 @@ auto simple_match( const algebraic_data_type< TR ... > & adt, const T & t )
 template< typename L, typename R >
 auto simple_match( const boost::recursive_wrapper< L > & l, const R & r )
 { return simple_match( l.get( ), r ); }
-
-template< typename match_expression >
-struct matcher
-{
-
-};
 
 struct unit { }; //Fuck void
 typedef algebraic_data_type< unit, unit > Bool;
