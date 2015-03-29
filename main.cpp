@@ -16,7 +16,7 @@
 #include <boost/mpl/lambda.hpp>
 #include <boost/mpl/placeholders.hpp>
 #include <memory>
-#include "../misc/expansion.hpp"
+#include "../cpp_common/expansion.hpp"
 //#include <boost/hana.hpp> //debian testing does not has high enough version of clang and hana is unable to detect clang in unstable. Got to wait for a while.
 struct recursive_indicator { };
 struct wildstar;
