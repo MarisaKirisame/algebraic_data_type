@@ -39,10 +39,6 @@ namespace algebraic_data_type
                         f,
                     res ... );
         }
-
-        template< typename ... ARG, typename F, typename ... REST >
-        static auto match( const boost::recursive_wrapper< algebraic_data_type< ARG ... > > & s, const F & f, const REST & ... res )
-        { return match( s.get( ), f, res ... ); }
     };
 
     template< size_t, typename F >
@@ -73,16 +69,16 @@ namespace algebraic_data_type
         auto helper( std::enable_if_t< T > *, const ARG & ... arg ) const
         {
             return pattern_matcher< typename boost::mpl::at_c< EXP, 0 >::type >::match(
-                    std::get< 0 >( sec ),
+                    extract_recursive_wrapper( std::get< 0 >( sec ) ),
                     multi_arg_loader< typename boost::mpl::pop_front< EXP >::type, decltype( tuple_pop( sec ) ), F > { tuple_pop( sec ), f },
-                    arg ... );
+                    extract_recursive_wrapper( arg ) ... );
         }
         template< bool T, typename ... ARG >
         auto helper( std::enable_if_t< ! T > *, const ARG & ... arg ) const
-        { return f( arg ... ); }
+        { return f( extract_recursive_wrapper( arg  ) ... ); }
         template< typename ... ARG >
         auto operator ( )( const ARG & ... arg ) const
-        { return helper< (std::tuple_size< STORE >::value > 0), ARG ... >( nullptr, arg ... ); }
+        { return helper< (std::tuple_size< STORE >::value > 0), ARG ... >( nullptr, extract_recursive_wrapper( arg ) ... ); }
     };
 
     template< size_t nth, typename F, typename ... T, typename ... REST >
@@ -114,13 +110,10 @@ namespace algebraic_data_type
                 std::tuple_size< std::tuple< R ... > >::value + 1,
                 "Not enough constructor argument" );
             return pattern_matcher< L >::match(
-                    std::get< 0 >( p ),
+                    extract_recursive_wrapper( std::get< 0 >( p ) ),
                     multi_arg_loader< boost::mpl::vector< R ... >, decltype( tuple_pop( p ) ), F > { tuple_pop( p ), f },
-                    res ... );
+                    extract_recursive_wrapper( res ) ... );
         }
-        template< typename ... ARG, typename F, typename ... REST >
-        static auto match( const boost::recursive_wrapper< algebraic_data_type< ARG ... > > & s, const F & f, const REST & ... res )
-        { return match( s.get( ), f, res ... ); }
     };
 
     template< typename T >
@@ -137,10 +130,6 @@ namespace algebraic_data_type
         template< typename ... T, typename F, typename ... REST >
         static auto match( const algebraic_data_type< T ... > & exp, const F & f, const REST & ... res )
         { return exp.template match_pattern< FST >( ) ? pattern_matcher< FST >::match( exp, f, res ... ) : pattern_matcher< matcher< SND ... > >::match( exp, f, res ... ); }
-
-        template< typename ... T, typename F, typename ... REST >
-        static auto match( const boost::recursive_wrapper< algebraic_data_type< T ... > > & exp, const F & f, const REST & ... res )
-        { return match( exp.get( ), f, res ... ); }
     };
 
     template< >
@@ -180,14 +169,10 @@ namespace algebraic_data_type
                 std::tuple_size< typename algebraic_data_type< ARG ... >::template constructor_parameter_type< which >::type >::value == 2,
                 "Not enough constructor argument" );
             return pattern_matcher< L >::match(
-                    std::get< 0 >( p ),
+                    extract_recursive_wrapper( std::get< 0 >( p ) ),
                     arg_loader< R, decltype( std::get< 1 >( p ) ), F > { std::get< 1 >( p ), f },
-                    res ... );
+                    extract_recursive_wrapper( res ) ... );
         }
-
-        template< typename ... ARG, typename F, typename ... REST >
-        static auto match( const boost::recursive_wrapper< algebraic_data_type< ARG ... > > & s, const F & f, const REST & ... res )
-        { return match( s.get( ), f, res ... ); }
     };
 
     template< typename ... TR, typename T >
@@ -200,9 +185,5 @@ namespace algebraic_data_type
         typename adt_type::template match_visitor< T, ret_type > smv { t };
         return adt.data.apply_visitor( smv );
     }
-
-    template< typename L, typename R >
-    auto simple_match( const boost::recursive_wrapper< L > & l, const R & r )
-    { return simple_match( l.get( ), r ); }
 }
 #endif // PATTERN_MATCHER_HPP
