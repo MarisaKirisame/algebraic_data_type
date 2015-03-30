@@ -9,4 +9,7 @@ QMAKE_CXXFLAGS += -std=c++1z
 INCLUDEPATH += /home/marisa/GitSource/Idionne/hana/include
 
 HEADERS += \
-    algebraic_data_type.hpp
+    algebraic_data_type.hpp \
+    core.hpp \
+    pattern_tester.hpp \
+    pattern_matcher.hpp

@@ -1,7 +1,15 @@
 #include "algebraic_data_type.hpp"
+using namespace algebraic_data_type;
+typedef algebraic_data_type< unit, unit > Bool;
+typedef algebraic_data_type< unit, recursive_indicator > Nat;
+typedef algebraic_data_type< std::tuple< bool, bool, bool > > tri_bool;
+DECLARE_CONSTRUCTOR( Bool, 0, True, T );
+DECLARE_CONSTRUCTOR( Bool, 1, False, T );
+DECLARE_CONSTRUCTOR( Nat, 0, O, T );
+DECLARE_CONSTRUCTOR( Nat, 1, S, T );
+DECLARE_CONSTRUCTOR( tri_bool, 0, tb, T );
 int main( )
 {
-    using namespace algebraic_data_type;
     tri_bool p = tb<>( )( std::make_tuple( true, false, false ) );
     assert( ( p.match< tb< arg, arg, wildstar > >( []( bool l, bool r ) { return l && ! r; } ) ) );
     Bool b = True<>( )( unit( ) );
