@@ -12,4 +12,6 @@ HEADERS += \
     algebraic_data_type.hpp \
     core.hpp \
     pattern_tester.hpp \
-    pattern_matcher.hpp
+    pattern_matcher.hpp \
+    test.hpp
+LIBS += -lboost_unit_test_framework
