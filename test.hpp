@@ -2,7 +2,7 @@
 #define TEST_HPP
 #include "algebraic_data_type.hpp"
 #define BOOST_TEST_MAIN
-#define BOOST_TEST_DYN_LINK
+#include <boost/test/included/unit_test.hpp> //#define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
 using namespace algebraic_data_type;
