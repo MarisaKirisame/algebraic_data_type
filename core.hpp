@@ -28,11 +28,18 @@ namespace algebraic_data_type
             template< typename T, typename ... TR >
             struct apply
             {
+
+                struct get
+                {
+                    template< typename ... TT >
+                    struct apply { typedef boost::variant< TT ... > type; };
+                };
+
                 typedef typename
                 boost::mpl::eval_if_c
                 <
                     boost::mpl::size< T >::value == 1,
-                    boost::mpl::identity< boost::variant< TR ... > >,
+                    boost::mpl::apply< get, TR ... >,
                     boost::mpl::apply< inner, typename boost::mpl::pop_front< T >::type, typename boost::mpl::front< T >::type, TR ... >
                 >::type type;
             };
