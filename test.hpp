@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE( nat_test )
     BOOST_CHECK( (
         n.match< O< arg >, S< S< arg > >, arg >(
             common::make_expansion(
-                []( const Nat & n ){ return simple_match( n, [](const auto & l, const auto &){ return l.which_constructor == 0; } ); },
+                []( const Nat & n ){ return simple_match( n, [](const auto & l, const auto &){ return l.which_constructor == 1; } ); },
                 []( const unit & ){ return false; } ) ) ) );
 }
 
