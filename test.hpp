@@ -7,9 +7,9 @@
 
 using namespace algebraic_data_type;
 
-typedef algebraic_data_type< unit, recursive_indicator > Nat;
-DECLARE_CONSTRUCTOR( Nat, 0, O, T );
-DECLARE_CONSTRUCTOR( Nat, 1, S, T );
+typedef algebraic_data_type< recursive_indicator, unit > Nat;
+DECLARE_CONSTRUCTOR( Nat, 1, O, T );
+DECLARE_CONSTRUCTOR( Nat, 0, S, T );
 BOOST_AUTO_TEST_CASE( nat_test )
 {
     Nat n = S<>( )( S<>( )( O<>( )( unit( ) ) ) );

@@ -44,12 +44,10 @@ namespace algebraic_data_type
     struct pattern_tester< FIRST, SECOND >
     {
         template< typename FST, typename SND >
-        static bool match_pattern( const std::pair< FST, SND > & p )
-        { return FST::match_pattern( extract_recursive_wrapper( p.first ) ) && SND::match_pattern( extract_recursive_wrapper( p.second ) ); }
+        static bool match_pattern( const std::pair< FST, SND > & p ) { return FST::match_pattern( p.first ) && SND::match_pattern( p.second ); }
 
         template< typename FST, typename SND >
-        static bool match_pattern( const std::tuple< FST, SND > & p )
-        { return FST::match_pattern( extract_recursive_wrapper( p.first ) ) && SND::match_pattern( extract_recursive_wrapper( p.second ) ); }
+        static bool match_pattern( const std::tuple< FST, SND > & p ) { return FST::match_pattern( p.first ) && SND::match_pattern( p.second ); }
     };
 
     template< >
@@ -61,7 +59,7 @@ namespace algebraic_data_type
     {
         template< typename ... T >
         static bool match_pattern( const std::tuple< T ... > & t )
-        { return FIRST::match_pattern( extract_recursive_wrapper( std::get< 0 >( t ) ) ) && pattern_tester< REST ... >::match_pattern( tuple_pop( t ) ); }
+        { return FIRST::match_pattern( std::get< 0 >( t ) ) && pattern_tester< REST ... >::match_pattern( tuple_pop( t ) ); }
     };
 }
 #endif // PATTERN_TESTER_HPP

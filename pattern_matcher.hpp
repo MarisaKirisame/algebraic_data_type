@@ -180,8 +180,8 @@ namespace algebraic_data_type
     {
         typedef algebraic_data_type< TR ... > adt_type;
         typedef decltype(
-            t(  std::declval< typename adt_type::template get_constructor< 0 >::type >( ),
-                std::declval< typename boost::mpl::front< typename adt_type::variant_arg_type >::type::second_type >( ) ) ) ret_type;
+            t( std::declval< typename adt_type::template get_constructor< 0 >::type >( ),
+               std::declval< typename boost::mpl::front< typename adt_type::variant_arg_type >::type::second_type >( ) ) ) ret_type;
         typename adt_type::template match_visitor< T, ret_type > smv { t };
         return adt.data.apply_visitor( smv );
     }
