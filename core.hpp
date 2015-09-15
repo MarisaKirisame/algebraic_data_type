@@ -54,6 +54,9 @@ namespace algebraic_data_type
     template< typename SELF_TYPE >
     struct unfold_recursive< SELF_TYPE, recursive_indicator > { typedef boost::recursive_wrapper< SELF_TYPE > type; };
 
+    template< typename SELF_TYPE, typename ... T >
+    struct unfold_recursive< SELF_TYPE, std::tuple< T ... > > { typedef std::tuple< typename unfold_recursive< SELF_TYPE, T >::type ... > type; };
+
     template< typename ... TR >
     struct algebraic_data_type
     {
