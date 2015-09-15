@@ -38,4 +38,14 @@ BOOST_AUTO_TEST_CASE( tri_bool_test )
     tri_bool p = tb<>( )( std::make_tuple( true, false, false ) );
     BOOST_CHECK( ( p.match< tb< arg, arg, wildstar > >( []( bool l, bool r ) { return l && ! r; } ) ) );
 }
+
+typedef algebraic_data_type< unit, std::tuple< bool, recursive_indicator > > bl;
+DECLARE_CONSTRUCTOR( bl, 0, nil, t );
+DECLARE_CONSTRUCTOR( bl, 1, cons, t );
+BOOST_AUTO_TEST_CASE( bl_test )
+{
+    bl l = cons< >( )( std::make_tuple( true, nil< >( )( unit( ) ) ) );
+    BOOST_CHECK( ( l.match< cons< arg, arg > >( []( bool b, const bl & ){ return b; } ) ) );
+}
+
 #endif // TEST_HPP
