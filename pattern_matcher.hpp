@@ -115,6 +115,14 @@ namespace algebraic_data_type
         }
     };
 
+    template< typename self_type, size_t which >
+    struct pattern_matcher< constructor_indicator< self_type, which > >
+    {
+        template< typename EXP, typename F, typename ... ARG >
+        static auto match( const EXP &, const F & f, const ARG & ... rst )
+        { return f( rst ... ); }
+    };
+
     template< typename T >
     struct pattern_matcher< matcher< T > >
     {
@@ -136,7 +144,7 @@ namespace algebraic_data_type
     };
 
     template< >
-    struct pattern_matcher<  >
+    struct pattern_matcher< matcher< > >
     {
         template< typename EXP, typename F, typename ... ARG >
         static auto match( const EXP & e, const F & f, const ARG & ... rst )
