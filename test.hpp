@@ -48,4 +48,12 @@ BOOST_AUTO_TEST_CASE( bl_test )
     BOOST_CHECK( ( l.match< cons< arg, arg > >( []( bool b, const bl & ){ return b; } ) ) );
 }
 
+typedef algebraic_data_type< std::tuple< Bool, Bool > > meow;
+DECLARE_CONSTRUCTOR( meow, 0, Meow, t );
+BOOST_AUTO_TEST_CASE( meow_test )
+{
+    meow MEOW = Meow< >( )( std::make_tuple( True<>( )( unit( ) ), False<>( )( unit( ) ) ) );
+    BOOST_CHECK( ( MEOW.match< Meow< True< wildstar >, False< wildstar > > >( []( ) { return true; } ) ) );
+}
+
 #endif // TEST_HPP
