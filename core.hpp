@@ -38,14 +38,14 @@ namespace algebraic_data_type
                 typedef typename
                 boost::mpl::eval_if_c
                 <
-                    boost::mpl::size< T >::value == 1,
+                    boost::mpl::size< T >::value == 0,
                     boost::mpl::apply< get, TR ... >,
                     boost::mpl::apply< inner, typename boost::mpl::pop_front< T >::type, typename boost::mpl::front< T >::type, TR ... >
                 >::type type;
             };
         };
         template< typename T >
-        struct apply : inner::apply< typename boost::mpl::push_back< T, boost::mpl::void_ >::type > { };
+        struct apply : inner::apply< T > { };
     };
 
     template< typename SELF_TYPE, typename T >
