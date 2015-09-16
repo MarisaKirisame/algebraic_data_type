@@ -7,9 +7,9 @@ namespace algebraic_data_type
     {
         constexpr static size_t which_constructor = which;
         typedef CONSTRUCTOR_TYPE constructor_type;
-        template< typename ... ARG >
-        CONSTRUCTOR_TYPE operator ( )( ARG && ... arg ) const
-        { return CONSTRUCTOR_TYPE( std::make_pair( boost::mpl::int_< which >( ), std::make_tuple( std::forward< ARG >( arg ) ... ) ) ); }
+        template< typename ARG >
+        CONSTRUCTOR_TYPE operator ( )( ARG && arg ) const
+        { return CONSTRUCTOR_TYPE( std::make_pair( boost::mpl::int_< which >( ), std::forward< ARG >( arg ) ) ); }
     };
 
     template< typename ... T >

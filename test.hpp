@@ -7,28 +7,20 @@
 
 using namespace algebraic_data_type;
 
-typedef algebraic_data_type< std::tuple< unit > > Unit;
-DECLARE_CONSTRUCTOR( Unit, 0, tt, T );
-BOOST_AUTO_TEST_CASE( unit_test ) //lol
-{
-    Unit u = tt<>( )( unit( ) );
-    u.match< tt<> >( [](){return true;} );
-}
-
-/*typedef algebraic_data_type< std::tuple< recursive_indicator >, unit > Nat;
+typedef algebraic_data_type< recursive_indicator, unit > Nat;
 DECLARE_CONSTRUCTOR( Nat, 1, O, T );
 DECLARE_CONSTRUCTOR( Nat, 0, S, T );
 BOOST_AUTO_TEST_CASE( nat_test )
 {
-    Nat n = S<>( )( S<>( )( O<>( )( ) ) );
+    Nat n = S<>( )( S<>( )( O<>( )( unit( ) ) ) );
     BOOST_CHECK( (
-        n.match< O< wildstar >, S< S< arg > >, arg >(
+        n.match< O< arg >, S< S< arg > >, arg >(
             common::make_expansion(
                 []( const Nat & n ){ return simple_match( n, [](const auto & l, const auto &){ return l.which_constructor == 1; } ); },
-                []( ){ return false; } ) ) ) );
-}*/
+                []( const unit & ){ return false; } ) ) ) );
+}
 
-/*typedef algebraic_data_type< unit, unit > Bool;
+typedef algebraic_data_type< unit, unit > Bool;
 DECLARE_CONSTRUCTOR( Bool, 1, False, T );
 DECLARE_CONSTRUCTOR( Bool, 0, True, T );
 BOOST_AUTO_TEST_CASE( bool_test )
@@ -62,6 +54,6 @@ BOOST_AUTO_TEST_CASE( meow_test )
 {
     meow MEOW = Meow< >( )( std::make_tuple( True<>( )( unit( ) ), False<>( )( unit( ) ) ) );
     BOOST_CHECK( ( MEOW.match< Meow< True< wildstar >, False< wildstar > > >( []( ) { return true; } ) ) );
-}*/
+}
 
 #endif // TEST_HPP
