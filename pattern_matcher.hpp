@@ -135,14 +135,6 @@ namespace algebraic_data_type
         }
     };
 
-    template< >
-    struct pattern_matcher<  >
-    {
-        template< typename EXP, typename F, typename ... ARG >
-        static auto match( const EXP & e, const F & f, const ARG & ... rst )
-        { return f( rst ..., e ); }
-    };
-
     template< typename EXP, typename STORE, typename F >
     struct arg_loader
     {

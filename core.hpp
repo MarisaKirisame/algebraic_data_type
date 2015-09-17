@@ -23,29 +23,22 @@ namespace algebraic_data_type
     struct recursive_indicator { };
     struct to_variant
     {
-        struct inner
+        template< typename T, typename ... TR >
+        struct apply
         {
-            template< typename T, typename ... TR >
-            struct apply
+            struct get
             {
-
-                struct get
-                {
-                    template< typename ... TT >
-                    struct apply { typedef boost::variant< TT ... > type; };
-                };
-
-                typedef typename
-                boost::mpl::eval_if_c
-                <
-                    boost::mpl::size< T >::value == 1,
-                    boost::mpl::apply< get, TR ... >,
-                    boost::mpl::apply< inner, typename boost::mpl::pop_front< T >::type, typename boost::mpl::front< T >::type, TR ... >
-                >::type type;
+                template< typename ... TT >
+                struct apply { typedef boost::variant< TT ... > type; };
             };
+            typedef typename
+            boost::mpl::eval_if_c
+            <
+                boost::mpl::size< T >::value == 0,
+                boost::mpl::apply< get, TR ... >,
+                boost::mpl::apply< to_variant, typename boost::mpl::pop_front< T >::type, typename boost::mpl::front< T >::type, TR ... >
+            >::type type;
         };
-        template< typename T >
-        struct apply : inner::apply< typename boost::mpl::push_back< T, boost::mpl::void_ >::type > { };
     };
 
     template< typename SELF_TYPE, typename T >
