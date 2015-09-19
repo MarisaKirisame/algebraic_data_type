@@ -14,7 +14,7 @@ BOOST_AUTO_TEST_CASE( nat_test )
 {
     Nat n = S<>( )( std::make_tuple( S<>( )( std::make_tuple( O<>( )( std::make_tuple( unit( ) ) ) ) ) ) );
     BOOST_CHECK( (
-        n.match< O< arg >, S< S< arg > >, arg >(
+        n.match< O< arg >, S< S< arg > >, O<arg> >(
             common::make_expansion(
                 []( const Nat & n ){ return simple_match( n, [](const auto & l, const auto &){ return l.which_constructor == 1; } ); },
                 []( const unit & ){ return false; } ) ) ) );
