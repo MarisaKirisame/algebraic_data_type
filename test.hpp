@@ -7,7 +7,7 @@
 
 using namespace algebraic_data_type;
 
-typedef algebraic_data_type< std::tuple< recursive_indicator >, std::tuple< unit > > Nat;
+typedef algebraic_data_type< recursive_indicator, unit > Nat;
 DECLARE_CONSTRUCTOR( Nat, 1, O, T );
 DECLARE_CONSTRUCTOR( Nat, 0, S, T );
 BOOST_AUTO_TEST_CASE( nat_test )
@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE( nat_test )
                 []( const unit & ) { return false; } ) ) ) );
 }
 
-typedef algebraic_data_type< std::tuple< unit >, std::tuple< unit > > Bool;
+typedef algebraic_data_type< unit , unit > Bool;
 DECLARE_CONSTRUCTOR( Bool, 1, False, T );
 DECLARE_CONSTRUCTOR( Bool, 0, True, T );
 BOOST_AUTO_TEST_CASE( bool_test )
@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_CASE( tri_bool_test )
     BOOST_CHECK( ( p.match< tb< arg, arg, wildstar > >( []( bool l, bool r ) { return l && ! r; } ) ) );
 }
 
-typedef algebraic_data_type< std::tuple< bool, recursive_indicator >, std::tuple< unit > > bl;
+typedef algebraic_data_type< std::tuple< bool, recursive_indicator >, unit > bl;
 DECLARE_CONSTRUCTOR( bl, 1, nil, t );
 DECLARE_CONSTRUCTOR( bl, 0, cons, t );
 BOOST_AUTO_TEST_CASE( bl_test )

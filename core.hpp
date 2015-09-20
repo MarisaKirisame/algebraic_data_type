@@ -59,13 +59,39 @@ namespace algebraic_data_type
     };
 
     template< typename SELF_TYPE, typename T >
-    struct unfold_recursive { typedef T type; }; //Open: Add more specialization to deal with different case.
+    struct unfold_recursive_wrapper { typedef T type; }; //Open: Add more specialization to deal with different case.
 
     template< typename SELF_TYPE >
-    struct unfold_recursive< SELF_TYPE, recursive_indicator > { typedef boost::recursive_wrapper< SELF_TYPE > type; };
+    struct unfold_recursive_wrapper< SELF_TYPE, recursive_indicator > { typedef boost::recursive_wrapper< SELF_TYPE > type; };
+
+    template< typename SELF_TYPE, typename L, typename R >
+    struct unfold_recursive_wrapper< SELF_TYPE, std::pair< L, R > >
+    {
+        typedef
+            std::pair
+            <
+                typename unfold_recursive_wrapper< SELF_TYPE, L >::type,
+                typename unfold_recursive_wrapper< SELF_TYPE, R >::type
+            >
+            type;
+    };
 
     template< typename SELF_TYPE, typename ... T >
-    struct unfold_recursive< SELF_TYPE, std::tuple< T ... > > { typedef std::tuple< typename unfold_recursive< SELF_TYPE, T >::type ... > type; };
+    struct unfold_recursive_wrapper< SELF_TYPE, std::tuple< T ... > >
+    {
+        typedef
+            std::tuple< typename unfold_recursive_wrapper< SELF_TYPE, T >::type ... >
+            type;
+    };
+
+    template< typename T >
+    struct wrap_tuple { typedef std::tuple< T > type; }; //Open: Add more specialization to deal with different case.
+
+    template< typename ... T >
+    struct wrap_tuple< std::tuple< T ... > > { typedef std::tuple< T ... > type; };
+
+    template< typename SELF_TYPE, typename T >
+    struct desugar { typedef typename wrap_tuple< typename unfold_recursive_wrapper< SELF_TYPE, T >::type >::type type; };
 
     template< typename ... TR >
     struct algebraic_data_type
@@ -83,7 +109,7 @@ namespace algebraic_data_type
                     std::pair
                     <
                         boost::mpl::int_< boost::mpl::size< F >::value >,
-                        typename unfold_recursive< self_type, T >::type
+                        typename desugar< self_type, T >::type
                     >
                 >::type type;
             };
@@ -153,6 +179,5 @@ namespace algebraic_data_type
     template< typename ... T >
     auto tuple_pop( const std::tuple< T ... > & t )
     { return expand_tuple( ignore_tie( ), t ); }
-
 }
 #endif // CORE_HPP
