@@ -1,5 +1,25 @@
 #ifndef CORE_HPP
 #define CORE_HPP
+#include <type_traits>
+#include <iostream>
+#include <utility>
+#include <boost/variant.hpp>
+#include <tuple>
+#include <boost/mpl/vector.hpp>
+#include <boost/mpl/transform.hpp>
+#include <boost/mpl/size.hpp>
+#include <boost/mpl/eval_if.hpp>
+#include <boost/mpl/pop_front.hpp>
+#include <boost/mpl/push_back.hpp>
+#include <boost/mpl/pop_back.hpp>
+#include <boost/mpl/push_front.hpp>
+#include <boost/mpl/arg.hpp>
+#include <boost/mpl/unpack_args.hpp>
+#include <boost/mpl/apply.hpp>
+#include <boost/mpl/lambda.hpp>
+#include <boost/mpl/placeholders.hpp>
+#include <memory>
+#include "../cpp_common/expansion.hpp"
 namespace algebraic_data_type
 {
     template< typename CONSTRUCTOR_TYPE, size_t which, typename ... TR >
@@ -12,13 +32,14 @@ namespace algebraic_data_type
         { return CONSTRUCTOR_TYPE( std::make_pair( boost::mpl::int_< which >( ), std::forward< ARG >( arg ) ) ); }
     };
 
-    template< typename ... T >
+    template< typename T >
     struct pattern_tester;
 
-    template< typename ... T >
+    template< typename T >
     struct pattern_matcher;
 
-    template< typename ... match_expression > struct matcher { };
+    template< typename ... match_expression > struct multi_matcher { };
+    template< typename ... match_expression > struct multi_tester { };
 
     struct recursive_indicator { };
     struct to_variant
@@ -94,11 +115,8 @@ namespace algebraic_data_type
         template< typename T >
         bool match_pattern( ) const { return pattern_tester< T >::match_pattern( * this ); }
 
-        template< typename MATCH_EXP, typename F >
-        auto match( const F & f ) const { return pattern_matcher< MATCH_EXP >::match( *this, f ); }
-
-        template< typename FST, typename SND, typename ... MATCH_EXP, typename F >
-        auto match( const F & f ) const { return pattern_matcher< matcher< FST, SND, MATCH_EXP ... > >::match( *this, f ); }
+        template< typename ... MATCH_EXP, typename F >
+        auto match( const F & f ) const { return pattern_matcher< multi_matcher< MATCH_EXP ... > >::match( *this, f ); }
     };
 
     template< typename T >
@@ -111,5 +129,34 @@ namespace algebraic_data_type
 
     template< typename T >
     auto extract_recursive_wrapper( const T & t ) { return recursive_wrapper_extractor< T >( )( t ); }
+
+    template< size_t, typename F >
+    auto expand_tuple_inner( const F & f, const std::tuple< > & )
+    { return f( ); }
+
+    template< size_t nth, typename F, typename ... T, typename ... REST >
+    auto expand_tuple_inner( const F & f, const std::tuple< T ... > & t, const REST & ... r )
+    {
+        return common::make_expansion(
+                [&]( const auto & t, std::true_type ) { return f( r ..., std::get< nth >( t ) ); },
+                [&]( const auto & t, std::false_type ) { return expand_tuple_inner< nth + 1 >( f, t, r ..., std::get< nth >( t ) ); } )
+                ( t, std::integral_constant< bool, std::tuple_size< std::tuple< T ... > >::value == nth + 1 >( ) );
+    }
+
+    template< typename F, typename ... T >
+    auto expand_tuple( const F & f, const std::tuple< T ... > & t )
+    { return expand_tuple_inner< 0 >( f, t ); }
+
+    struct ignore_tie
+    {
+        template< typename FIRST, typename ... REST >
+        auto operator ( )( const FIRST &, const REST & ... r ) const
+        { return std::tie( r ... ); }
+    };
+
+    template< typename ... T >
+    auto tuple_pop( const std::tuple< T ... > & t )
+    { return expand_tuple( ignore_tie( ), t ); }
+
 }
 #endif // CORE_HPP

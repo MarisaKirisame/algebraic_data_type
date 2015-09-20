@@ -13,11 +13,13 @@ DECLARE_CONSTRUCTOR( Nat, 0, S, T );
 BOOST_AUTO_TEST_CASE( nat_test )
 {
     Nat n = S<>( )( std::make_tuple( S<>( )( std::make_tuple( O<>( )( std::make_tuple( unit( ) ) ) ) ) ) );
+    BOOST_CHECK( n.match_pattern< S< arg > >( ) );
+    BOOST_CHECK( n.match_pattern< S< S< arg > > >( ) );
     BOOST_CHECK( (
-        n.match< O< arg >, S< S< arg > >, O<arg> >(
+        n.match< S< S< arg > > >(
             common::make_expansion(
-                []( const Nat & n ){ return simple_match( n, [](const auto & l, const auto &){ return l.which_constructor == 1; } ); },
-                []( const unit & ){ return false; } ) ) ) );
+                []( const Nat & n ) { return simple_match( n, [](const auto & l, const auto &){ return l.which_constructor == 1; } ); },
+                []( const unit & ) { return false; } ) ) ) );
 }
 
 /*typedef algebraic_data_type< unit, unit > Bool;
