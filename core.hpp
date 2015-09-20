@@ -59,6 +59,8 @@ namespace algebraic_data_type
         std::pair< boost::mpl::int_< which >, constructor_type > constructor;
         constructor_indicator( ) : constructor( std::make_pair( boost::mpl::int_< which >( ), constructor_type( ) ) ) { }
 
+        constructor_indicator( const constructor_indicator & arg ) = delete;
+        constructor_indicator( constructor_indicator && arg ) = delete;
         template< typename ... ARG >
         constructor_indicator( ARG && ... arg ) :
             constructor(

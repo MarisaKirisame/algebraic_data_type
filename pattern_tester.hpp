@@ -34,13 +34,6 @@ namespace algebraic_data_type
     template< >
     struct pattern_tester< multi_tester< > > { static bool match_pattern( const std::tuple< > & ) { return true; } };
 
-    template< typename T >
-    struct pattern_tester< multi_tester< T > >
-    {
-        template< typename EXP >
-        static bool match_pattern( const EXP & e ) { return pattern_tester< T >::match_pattern( extract_recursive_wrapper( e ) ); }
-    };
-
     template< typename self_type, size_t which, typename ... PR >
     struct pattern_tester< constructor_indicator< self_type, which, PR ... > >
     {
@@ -54,7 +47,7 @@ namespace algebraic_data_type
                 return common::make_expansion(
                             [](const std::true_type &, const auto & r )
                             { return pattern_tester< multi_tester< PR ... > >::match_pattern( extract_recursive_wrapper( r ) ); },
-                            [](const std::false_type &, const auto & r ) { return false; } )
+                            [](const std::false_type &, const auto & ) { return false; } )
                             ( std::integral_constant< bool, constructor_type::which_constructor == which >( ), r );
             }
         };

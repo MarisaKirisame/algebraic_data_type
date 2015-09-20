@@ -12,13 +12,13 @@ DECLARE_CONSTRUCTOR( Nat, 1, O, T );
 DECLARE_CONSTRUCTOR( Nat, 0, S, T );
 BOOST_AUTO_TEST_CASE( nat_test )
 {
-    Nat n = S< >( S< >( O< >( ) ) );
+    Nat n = S< arg >( S< >( O< >( ) ) );
     BOOST_CHECK( n.match_pattern< S< arg > >( ) );
-    BOOST_CHECK( n.match_pattern< S< S< arg > > >( ) );
+    BOOST_CHECK( simple_match( n, pattern_tester< S< S< O<> > > >::tester_helper( ) ) );
     BOOST_CHECK( (
         n.match< S< S< arg > >, O< > >(
             common::make_expansion(
-                []( const Nat & n ) { return simple_match( n, [](const auto & l, const auto &) { return true; } ); },
+                []( const Nat & n ) { return simple_match( n, [](const auto &, const auto &) { return true; } ); },
                 []( ) { return false; } ) ) ) );
 }
 
