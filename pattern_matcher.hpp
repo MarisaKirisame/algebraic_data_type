@@ -24,7 +24,7 @@ namespace algebraic_data_type
     struct pattern_matcher< constructor_indicator< self_type, which > >
     {
         template< typename ... ARG, typename F, typename ... REST >
-        static auto match( const algebraic_data_type< ARG ... > &, const F & f, const REST & ... res ) { f( res ... ); }
+        static auto match( const algebraic_data_type< ARG ... > &, const F & f, const REST & ... res ) { return f( res ... ); }
     };
 
     template< typename EXP, typename STORE, typename F >

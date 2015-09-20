@@ -6,5 +6,5 @@
 #define DECLARE_CONSTRUCTOR( ADT, WHICH, NAME, UNUSED ) \
     template< typename ... UNUSED > \
     using NAME = typename ADT::get_constructor< WHICH, UNUSED ... >::type
-    struct unit { };//typedef std::tuple<> unit; //Fuck void
+    typedef std::tuple<> unit; //Fuck void
 #endif // ALGEBRAIC_DATA_TYPE_HPP
