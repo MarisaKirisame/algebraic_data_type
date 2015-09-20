@@ -22,14 +22,14 @@ BOOST_AUTO_TEST_CASE( nat_test )
                 []( const unit & ) { return false; } ) ) ) );
 }
 
-/*typedef algebraic_data_type< unit, unit > Bool;
+typedef algebraic_data_type< std::tuple< unit >, std::tuple< unit > > Bool;
 DECLARE_CONSTRUCTOR( Bool, 1, False, T );
 DECLARE_CONSTRUCTOR( Bool, 0, True, T );
 BOOST_AUTO_TEST_CASE( bool_test )
 {
-    Bool b = True<>( )( unit( ) );
+    Bool b = True<>( )( std::make_tuple( unit( ) ) );
     BOOST_CHECK( b.match_pattern< wildstar >( ) );
-    BOOST_CHECK( b.match_pattern< True< wildstar > >( ) );
+    BOOST_CHECK( b.match_pattern< True< arg > >( ) );
     BOOST_CHECK( ( b.match< False< wildstar >, True< wildstar > >( []( ) { return true; } ) ) );
 }
 
@@ -41,12 +41,12 @@ BOOST_AUTO_TEST_CASE( tri_bool_test )
     BOOST_CHECK( ( p.match< tb< arg, arg, wildstar > >( []( bool l, bool r ) { return l && ! r; } ) ) );
 }
 
-typedef algebraic_data_type< unit, std::tuple< bool, recursive_indicator > > bl;
-DECLARE_CONSTRUCTOR( bl, 0, nil, t );
-DECLARE_CONSTRUCTOR( bl, 1, cons, t );
+typedef algebraic_data_type< std::tuple< bool, recursive_indicator >, std::tuple< unit > > bl;
+DECLARE_CONSTRUCTOR( bl, 1, nil, t );
+DECLARE_CONSTRUCTOR( bl, 0, cons, t );
 BOOST_AUTO_TEST_CASE( bl_test )
 {
-    bl l = cons< >( )( std::make_tuple( true, nil< >( )( unit( ) ) ) );
+    bl l = cons< >( )( std::make_tuple( true, nil< >( )( std::make_tuple( unit( ) ) ) ) );
     BOOST_CHECK( ( l.match< cons< arg, arg > >( []( bool b, const bl & ){ return b; } ) ) );
 }
 
@@ -54,8 +54,8 @@ typedef algebraic_data_type< std::tuple< Bool, Bool > > meow;
 DECLARE_CONSTRUCTOR( meow, 0, Meow, t );
 BOOST_AUTO_TEST_CASE( meow_test )
 {
-    meow MEOW = Meow< >( )( std::make_tuple( True<>( )( unit( ) ), False<>( )( unit( ) ) ) );
+    meow MEOW = Meow< >( )( std::make_tuple( True<>( )( std::make_tuple( unit( ) ) ), False<>( )( std::make_tuple( unit( ) ) ) ) );
     BOOST_CHECK( ( MEOW.match< Meow< True< wildstar >, False< wildstar > > >( []( ) { return true; } ) ) );
-}*/
+}
 
 #endif // TEST_HPP

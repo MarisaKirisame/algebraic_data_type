@@ -34,6 +34,13 @@ namespace algebraic_data_type
     template< >
     struct pattern_tester< multi_tester< > > { static bool match_pattern( const std::tuple< > & ) { return true; } };
 
+    template< typename T >
+    struct pattern_tester< multi_tester< T > >
+    {
+        template< typename EXP >
+        static bool match_pattern( const EXP & e ) { return pattern_tester< T >::match_pattern( extract_recursive_wrapper( e ) ); }
+    };
+
     template< typename self_type, size_t which, typename ... PR >
     struct pattern_tester< constructor_indicator< self_type, which, PR ... > >
     {
@@ -43,7 +50,11 @@ namespace algebraic_data_type
             bool operator ( )( const L &, const R & r ) const
             {
                 static_assert( std::is_same< typename L::constructor_type, self_type >::value, "Constructor Mismatch" );
-                return L::which_constructor == which && pattern_tester< multi_tester< PR ... > >::match_pattern( extract_recursive_wrapper( r ) );
+                return common::make_expansion(
+                            [](const std::true_type &, const auto & r )
+                            { return pattern_tester< multi_tester< PR ... > >::match_pattern( extract_recursive_wrapper( r ) ); },
+                            [](const std::false_type &, const auto & ){ return false; } )
+                            ( std::integral_constant< bool, L::which_constructor == which >( ), r );
             }
         };
 
@@ -51,7 +62,7 @@ namespace algebraic_data_type
         static bool match_pattern( const algebraic_data_type< ARG ... > & s ) { return simple_match( s, tester_helper( ) ); }
 
         template< typename T >
-        static bool match_pattern( const std::tuple< T > & t ) { return match_pattern( std::get< 0 >( t ) ); }
+        static bool match_pattern( const std::tuple< T > & t ) { return match_pattern( extract_recursive_wrapper( std::get< 0 >( t ) ) ); }
 
         template< typename T >
         static bool match_pattern( const T & ) { return false; }
@@ -64,16 +75,16 @@ namespace algebraic_data_type
         static bool match_pattern( const std::pair< FST, SND > & p )
         {
             return
-                    pattern_tester< FST >::match_pattern( extract_recursive_wrapper( p.first ) ) &&
-                    pattern_tester< SND >::match_pattern( extract_recursive_wrapper( p.second ) );
+                    pattern_tester< FIRST >::match_pattern( extract_recursive_wrapper( p.first ) ) &&
+                    pattern_tester< SECOND >::match_pattern( extract_recursive_wrapper( p.second ) );
         }
 
         template< typename FST, typename SND >
         static bool match_pattern( const std::tuple< FST, SND > & p )
         {
             return
-                    pattern_tester< FST >::match_pattern( extract_recursive_wrapper( p.first ) ) &&
-                    pattern_tester< SND >::match_pattern( extract_recursive_wrapper( p.second ) );
+                    pattern_tester< FIRST >::match_pattern( extract_recursive_wrapper( std::get< 0 >( p ) ) ) &&
+                    pattern_tester< SECOND >::match_pattern( extract_recursive_wrapper( std::get< 1 >( p ) ) );
         }
     };
 
