@@ -11,7 +11,7 @@ namespace algebraic_data_type
     {
         typedef algebraic_data_type< TR ... > adt_type;
         typedef decltype(
-            t( std::declval< typename adt_type::template get_constructor< 0 >::type >( ),
+            t( tag< typename adt_type::template get_constructor< 0 >::type >( ),
                std::declval< typename boost::mpl::front< typename adt_type::variant_arg_type >::type::second_type >( ) ) ) ret_type;
         typename adt_type::template match_visitor< T, ret_type > smv { t };
         return adt.data.apply_visitor( smv );
@@ -49,12 +49,13 @@ namespace algebraic_data_type
             template< typename L, typename R >
             bool operator ( )( const L &, const R & r ) const
             {
-                static_assert( std::is_same< typename L::constructor_type, self_type >::value, "Constructor Mismatch" );
+                typedef typename L::type constructor_type;
+                static_assert( std::is_same< typename constructor_type::adt_type, self_type >::value, "Constructor Mismatch" );
                 return common::make_expansion(
                             [](const std::true_type &, const auto & r )
                             { return pattern_tester< multi_tester< PR ... > >::match_pattern( extract_recursive_wrapper( r ) ); },
-                            [](const std::false_type &, const auto & ){ return false; } )
-                            ( std::integral_constant< bool, L::which_constructor == which >( ), r );
+                            [](const std::false_type &, const auto & r ) { return false; } )
+                            ( std::integral_constant< bool, constructor_type::which_constructor == which >( ), r );
             }
         };
 
