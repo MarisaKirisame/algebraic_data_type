@@ -32,16 +32,12 @@ namespace algebraic_data_type
         { return CONSTRUCTOR_TYPE( std::make_pair( boost::mpl::int_< which >( ), std::make_tuple( std::forward< ARG >( arg ) ... ) ) ); }
     };
 
-    template< typename T >
-    struct pattern_tester;
-
-    template< typename T >
-    struct pattern_matcher;
-
-    template< typename ... match_expression > struct multi_matcher { };
-    template< typename ... match_expression > struct multi_tester { };
-
+    template< typename T > struct pattern_tester;
+    template< typename T > struct pattern_matcher;
+    template< typename ... match_expression > struct multi_matcher;
+    template< typename ... match_expression > struct multi_tester;
     struct recursive_indicator { };
+
     struct to_variant
     {
         template< typename T, typename ... TR >
