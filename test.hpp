@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE( bool_test )
 {
     Bool b = True<>( )( unit( ) );
     BOOST_CHECK( b.match_pattern< wildstar >( ) );
-    BOOST_CHECK( b.match_pattern< True< arg > >( ) );
+    BOOST_CHECK( b.match_pattern< True< wildstar > >( ) );
     BOOST_CHECK( ( b.match< False< wildstar >, True< wildstar > >( []( ) { return true; } ) ) );
 }
 

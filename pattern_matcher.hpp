@@ -20,25 +20,11 @@ namespace algebraic_data_type
         { return f( rst ..., extract_recursive_wrapper( e ) ); }
     };
 
-    template< typename self_type, size_t which, typename T >
-    struct pattern_matcher< constructor_indicator< self_type, which, T > >
+    template< typename self_type, size_t which >
+    struct pattern_matcher< constructor_indicator< self_type, which > >
     {
         template< typename ... ARG, typename F, typename ... REST >
-        static auto match( const algebraic_data_type< ARG ... > & s, const F & f, const REST & ... res )
-        {
-            return pattern_matcher< T >::match(
-                    extract_recursive_wrapper(
-                        std::get<0>( boost::get
-                        <
-                            std::pair
-                            <
-                                boost::mpl::int_< which >,
-                                typename algebraic_data_type< ARG ... >::template constructor_parameter_type< which >::type
-                            >
-                        >( s.data ).second ) ),
-                        f,
-                    res ... );
-        }
+        static auto match( const algebraic_data_type< ARG ... > &, const F & f, const REST & ... res ) { f( res ... ); }
     };
 
     template< typename EXP, typename STORE, typename F >
