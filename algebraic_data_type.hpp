@@ -5,6 +5,6 @@
 #include "pattern_matcher.hpp"
 #define DECLARE_CONSTRUCTOR( ADT, WHICH, NAME, UNUSED ) \
     template< typename ... UNUSED > \
-    using NAME = typename ADT::get_constructor< WHICH, UNUSED ... >::type
+    auto NAME( UNUSED && ... UNUSED0 ) { return constructor< ADT, WHICH >( std::forward< UNUSED >( UNUSED0 ) ... ); }
     typedef std::tuple<> unit; //Fuck void
 #endif // ALGEBRAIC_DATA_TYPE_HPP

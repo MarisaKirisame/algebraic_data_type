@@ -25,11 +25,6 @@ namespace algebraic_data_type
 
     template< typename adt_type, size_t which, typename ... TR > struct constructor_indicator;
 
-    template< typename adt_type, size_t which, typename ... TR >
-    auto constructor( TR & ... tr ) { return constructor_indicator< adt_type, which >( )( std::forward< TR >( tr ) ... ); }
-
-    struct use_in_match { } uim;
-
     template< typename T > struct is_constructor_indicator : std::false_type { };
     template< typename adt_type, size_t which, typename ... TR >
     struct is_constructor_indicator< constructor_indicator< adt_type, which, TR ... > > : std::true_type { };
@@ -38,11 +33,35 @@ namespace algebraic_data_type
     struct arg;
 
     template< typename T >
-    bool is_match_expression( )
+    constexpr bool is_match_expression( )
     {
         typedef std::decay_t< T > DT;
         return std::is_same< DT, arg >::value || std::is_same< DT, wildstar >::value || is_constructor_indicator< DT >::value;
     }
+
+    template< typename adt_type, size_t which, typename ... TR >
+    auto make_adt( std::tuple< TR ... > && tr )
+    { return adt_type( std::make_pair( boost::mpl::int_< which >( ), std::forward< std::tuple< TR ... > >( tr ) ) ); }
+
+    template< typename adt_type, size_t which >
+    auto constructor( ) { return make_adt< adt_type, which >( std::make_tuple( ) ); }
+
+    struct use_in_match { } uim;
+    template< typename adt_type, size_t which >
+    auto constructor( const use_in_match & ) { return constructor_indicator< adt_type, which >( ); }
+    template< typename adt_type, size_t which, typename T, typename ... TR >
+    auto constructor( T && t, TR && ... tr )
+    {
+        return
+            common::make_expansion(
+                []( const std::true_type &, auto && )
+                { return constructor_indicator< adt_type, which, std::decay_t< T >, std::decay_t< TR > ... >( ); },
+                []( const std::false_type &, auto && tu )
+                { return make_adt< adt_type, which >( static_cast< decltype( tu ) && >( tu ) ); } )
+                ( std::integral_constant< bool, is_match_expression< T >( ) >( ),
+                  std::make_tuple( std::forward< T >( t ), std::forward< TR >( tr ) ... ) );
+    }
+
 
     template< typename T >
     struct constructor_variant_getter { T operator ( )( T && t ) { return t; } };
@@ -75,16 +94,6 @@ namespace algebraic_data_type
         typedef ADT_TYPE adt_type;
         constexpr static size_t which_constructor = which;
         typedef typename strip_recursive_wrapper< typename adt_type::template constructor_parameter_type< which >::type >::type constructor_type;
-        std::pair< boost::mpl::int_< which >, constructor_type > constructor;
-        constructor_indicator( ) : constructor( std::make_pair( boost::mpl::int_< which >( ), constructor_type( ) ) ) { }
-
-        constructor_indicator( const constructor_indicator & arg ) = delete;
-        constructor_indicator( constructor_indicator && arg ) = delete;
-        template< typename ... ARG >
-        constructor_indicator( ARG && ... arg ) :
-            constructor(
-                boost::mpl::int_< which >( ),
-                constructor_type( std::make_tuple( constructor_variant( std::forward< ARG >( arg ) ) ... ) ) ) { }
     };
 
     template< typename T > struct pattern_tester;
@@ -172,8 +181,8 @@ namespace algebraic_data_type
         typedef typename boost::mpl::fold< boost::mpl::vector< TR ... >, boost::mpl::vector< >, add_pair >::type variant_arg_type;
         typename to_variant::template apply< variant_arg_type >::type data;
 
-        template< typename T >
-        algebraic_data_type( T && d ) : data( constructor_variant( std::forward< T >( d ) ) ) { }
+        algebraic_data_type( const decltype( data ) & d ) : data( d ) { }
+        algebraic_data_type( decltype( data ) && d ) : data( std::move( d ) ) { }
 
         template< size_t which, typename ... PR >
         struct get_constructor { typedef constructor_indicator< self_type, which, PR ... > type; };

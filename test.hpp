@@ -12,7 +12,9 @@ DECLARE_CONSTRUCTOR( Nat, 1, O, T );
 DECLARE_CONSTRUCTOR( Nat, 0, S, T );
 BOOST_AUTO_TEST_CASE( nat_test )
 {
-    Nat n = S< arg >( S< >( O< >( ) ) );
+    Nat n = O( );
+    //Nat n = S< arg >( S< >( O< >( ) ) );
+    /*
     BOOST_CHECK( n.match_pattern< S< arg > >( ) );
     BOOST_CHECK( simple_match( n, pattern_tester< S< S< O<> > > >::tester_helper( ) ) );
     BOOST_CHECK( (
@@ -55,7 +57,7 @@ DECLARE_CONSTRUCTOR( meow, 0, Meow, t );
 BOOST_AUTO_TEST_CASE( meow_test )
 {
     meow MEOW = Meow< >( True<>( ), False<>( ) );
-    BOOST_CHECK( ( MEOW.match< Meow< True< >, False< > > >( []( ) { return true; } ) ) );
+    BOOST_CHECK( ( MEOW.match< Meow< True< >, False< > > >( []( ) { return true; } ) ) );*/
 }
 
 #endif // TEST_HPP
