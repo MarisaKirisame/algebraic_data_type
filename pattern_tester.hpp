@@ -3,9 +3,6 @@
 #include "core.hpp"
 namespace algebraic_data_type
 {
-    struct wildstar;
-    struct arg;
-
     template< typename ... TR, typename T >
     auto simple_match( const algebraic_data_type< TR ... > & adt, const T & t )
     {

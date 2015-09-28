@@ -25,6 +25,25 @@ namespace algebraic_data_type
 
     template< typename adt_type, size_t which, typename ... TR > struct constructor_indicator;
 
+    template< typename adt_type, size_t which, typename ... TR >
+    auto constructor( TR & ... tr ) { return constructor_indicator< adt_type, which >( )( std::forward< TR >( tr ) ... ); }
+
+    struct use_in_match { } uim;
+
+    template< typename T > struct is_constructor_indicator : std::false_type { };
+    template< typename adt_type, size_t which, typename ... TR >
+    struct is_constructor_indicator< constructor_indicator< adt_type, which, TR ... > > : std::true_type { };
+
+    struct wildstar;
+    struct arg;
+
+    template< typename T >
+    bool is_match_expression( )
+    {
+        typedef std::decay_t< T > DT;
+        return std::is_same< DT, arg >::value || std::is_same< DT, wildstar >::value || is_constructor_indicator< DT >::value;
+    }
+
     template< typename T >
     struct constructor_variant_getter { T operator ( )( T && t ) { return t; } };
 
