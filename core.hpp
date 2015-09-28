@@ -29,14 +29,14 @@ namespace algebraic_data_type
     template< typename adt_type, size_t which, typename ... TR >
     struct is_constructor_indicator< constructor_indicator< adt_type, which, TR ... > > : std::true_type { };
 
-    struct wildstar;
-    struct arg;
+    struct WILDSTAR{ } wildstar;
+    struct ARG { } arg;
 
     template< typename T >
     constexpr bool is_match_expression( )
     {
         typedef std::decay_t< T > DT;
-        return std::is_same< DT, arg >::value || std::is_same< DT, wildstar >::value || is_constructor_indicator< DT >::value;
+        return std::is_same< DT, ARG >::value || std::is_same< DT, WILDSTAR >::value || is_constructor_indicator< DT >::value;
     }
 
     template< typename adt_type, size_t which, typename ... TR >
@@ -53,9 +53,15 @@ namespace algebraic_data_type
     struct use_in_match { } uim;
     template< typename adt_type, size_t which >
     auto constructor( const use_in_match & ) { return constructor_indicator< adt_type, which >( ); }
+    template< typename adt_type, size_t which >
+    auto constructor( use_in_match && ) { return constructor_indicator< adt_type, which >( ); }
+    template< typename adt_type, size_t which >
+    auto constructor( use_in_match & ) { return constructor_indicator< adt_type, which >( ); }
+
     template< typename adt_type, size_t which, typename T, typename ... TR >
     auto constructor( T && t, TR && ... tr )
     {
+        static_assert( ! std::is_same< std::decay_t< T >, use_in_match >::value, "should not be overloaded to here" );
         return
             common::make_expansion(
                 []( const std::true_type &, auto && )
@@ -206,10 +212,10 @@ namespace algebraic_data_type
         };
 
         template< typename T >
-        bool match_pattern( ) const { return pattern_tester< T >::match_pattern( * this ); }
+        bool match_pattern( T && ) const { return pattern_tester< std::decay_t< T > >::match_pattern( * this ); }
 
         template< typename ... MATCH_EXP, typename F >
-        auto match( const F & f ) const { return pattern_matcher< multi_matcher< MATCH_EXP ... > >::match( *this, f ); }
+        auto match( const F & f, const MATCH_EXP & ... ) const { return pattern_matcher< multi_matcher< MATCH_EXP ... > >::match( *this, f ); }
     };
 
     template< typename T >

@@ -5,18 +5,18 @@
 namespace algebraic_data_type
 {
     template< >
-    struct pattern_matcher< wildstar >
+    struct pattern_matcher< WILDSTAR >
     {
-        template< typename EXP, typename F, typename ... ARG >
-        static auto match( const EXP &, const F & f, const ARG & ... rst )
+        template< typename EXP, typename F, typename ... T >
+        static auto match( const EXP &, const F & f, const T & ... rst )
         { return f( rst ... ); }
     };
 
     template< >
-    struct pattern_matcher< arg >
+    struct pattern_matcher< ARG >
     {
-        template< typename EXP, typename F, typename ... ARG >
-        static auto match( const EXP & e, const F & f, const ARG & ... rst )
+        template< typename EXP, typename F, typename ... T >
+        static auto match( const EXP & e, const F & f, const T & ... rst )
         { return f( rst ..., extract_recursive_wrapper( e ) ); }
     };
 
@@ -79,7 +79,7 @@ namespace algebraic_data_type
         template< typename EXP, typename F, typename ... REST >
         static auto match( const EXP & exp, const F & f, const REST & ... res )
         {
-            assert( exp.template match_pattern< T >( ) );
+            assert( exp.match_pattern( T( ) ) );
             return pattern_matcher< T >::match( exp, f, res ... );
         }
     };
@@ -90,7 +90,7 @@ namespace algebraic_data_type
         template< typename ... T, typename F, typename ... REST >
         static auto match( const algebraic_data_type< T ... > & exp, const F & f, const REST & ... res )
         {
-            return exp.template match_pattern< FST >( ) ?
+            return exp.match_pattern( FST( ) ) ?
                         pattern_matcher< FST >::match( exp, f, res ... ) :
                         pattern_matcher< multi_matcher< SND ... > >::match( exp, f, res ... );
         }

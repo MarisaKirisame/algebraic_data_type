@@ -8,57 +8,56 @@
 using namespace algebraic_data_type;
 
 typedef algebraic_data_type< recursive_indicator, unit > Nat;
-DECLARE_CONSTRUCTOR( Nat, 1, O, T );
-DECLARE_CONSTRUCTOR( Nat, 0, S, T );
+DECLARE_CONSTRUCTOR( Nat, 1, O, T )
+DECLARE_CONSTRUCTOR( Nat, 0, S, T )
 
 BOOST_AUTO_TEST_CASE( nat_test )
 {
 
-    Nat n = S( O( ) );//S( S( O( ) ) );
-    /*
-    BOOST_CHECK( n.match_pattern< S< arg > >( ) );
-    BOOST_CHECK( simple_match( n, pattern_tester< S< S< O<> > > >::tester_helper( ) ) );
+    Nat n = S( S( O( ) ) );
+    BOOST_CHECK( n.match_pattern( S( arg ) ) );
     BOOST_CHECK( (
-        n.match< S< S< arg > >, O< > >(
+        n.match(
             common::make_expansion(
                 []( const Nat & n ) { return simple_match( n, [](const auto &, const auto &) { return true; } ); },
-                []( ) { return false; } ) ) ) );
+                []( ) { return false; } ),
+                S( S( arg ) ),
+                O( uim ) ) ) );
 }
 
 typedef algebraic_data_type< unit , unit > Bool;
-DECLARE_CONSTRUCTOR( Bool, 1, False, T );
-DECLARE_CONSTRUCTOR( Bool, 0, True, T );
+DECLARE_CONSTRUCTOR( Bool, 1, False, T )
+DECLARE_CONSTRUCTOR( Bool, 0, True, T )
 BOOST_AUTO_TEST_CASE( bool_test )
 {
-    Bool b = True< >( );
-    BOOST_CHECK( b.match_pattern< wildstar >( ) );
-    BOOST_CHECK( b.match_pattern< True< > >( ) );
-    BOOST_CHECK( ( b.match< False< >, True< > >( []( ) { return true; } ) ) );
+    Bool b = True( );
+    BOOST_CHECK( b.match_pattern( wildstar ) );
+    BOOST_CHECK( b.match_pattern( True( uim ) ) );
+    BOOST_CHECK( ( b.match( []( ) { return true; }, False( uim ), True( uim ) ) ) );
 }
 
 typedef algebraic_data_type< std::tuple< bool, bool, bool > > tri_bool;
-DECLARE_CONSTRUCTOR( tri_bool, 0, tb, T );
+DECLARE_CONSTRUCTOR( tri_bool, 0, tb, T )
 BOOST_AUTO_TEST_CASE( tri_bool_test )
 {
-    tri_bool p = tb<>( true, false, false );
-    BOOST_CHECK( ( p.match< tb< arg, arg, wildstar > >( []( bool l, bool r ) { return l && ! r; } ) ) );
+    tri_bool p = tb( true, false, false );
+    BOOST_CHECK( ( p.match( []( bool l, bool r ) { return l && ! r; }, tb( arg, arg, wildstar) ) ) );
 }
 
 typedef algebraic_data_type< std::tuple< bool, recursive_indicator >, unit > bl;
-DECLARE_CONSTRUCTOR( bl, 1, nil, t );
-DECLARE_CONSTRUCTOR( bl, 0, cons, t );
+DECLARE_CONSTRUCTOR( bl, 1, nil, t )
+DECLARE_CONSTRUCTOR( bl, 0, cons, t )
 BOOST_AUTO_TEST_CASE( bl_test )
 {
-    bl l = cons< >( true, nil< >( ) );
-    BOOST_CHECK( ( l.match< cons< arg, arg > >( []( bool b, const bl & ){ return b; } ) ) );
+    bl l = cons( true, nil( ) );
+    BOOST_CHECK( ( l.match( []( bool b, const bl & ){ return b; }, cons( arg, arg ) ) ) );
 }
 
 typedef algebraic_data_type< std::tuple< Bool, Bool > > meow;
-DECLARE_CONSTRUCTOR( meow, 0, Meow, t );
+DECLARE_CONSTRUCTOR( meow, 0, Meow, t )
 BOOST_AUTO_TEST_CASE( meow_test )
 {
-    meow MEOW = Meow< >( True<>( ), False<>( ) );
-    BOOST_CHECK( ( MEOW.match< Meow< True< >, False< > > >( []( ) { return true; } ) ) );*/
+    meow MEOW = Meow( True( ), False( ) );
+    BOOST_CHECK( ( MEOW.match( []( ) { return true; }, Meow( True( uim ), False( uim ) ) ) ) );
 }
-
 #endif // TEST_HPP

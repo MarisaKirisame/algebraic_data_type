@@ -15,17 +15,17 @@ namespace algebraic_data_type
     }
 
     template< >
-    struct pattern_tester< wildstar >
+    struct pattern_tester< WILDSTAR >
     {
-        template< typename ARG >
-        static bool match_pattern( const ARG & ) { return true; }
+        template< typename T >
+        static bool match_pattern( const T & ) { return true; }
     };
 
     template< >
-    struct pattern_tester< arg >
+    struct pattern_tester< ARG >
     {
-        template< typename ARG >
-        static bool match_pattern( const ARG & ) { return true; }
+        template< typename T >
+        static bool match_pattern( const T & ) { return true; }
     };
 
     template< >
