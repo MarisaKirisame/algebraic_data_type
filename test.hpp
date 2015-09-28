@@ -10,10 +10,11 @@ using namespace algebraic_data_type;
 typedef algebraic_data_type< recursive_indicator, unit > Nat;
 DECLARE_CONSTRUCTOR( Nat, 1, O, T );
 DECLARE_CONSTRUCTOR( Nat, 0, S, T );
+
 BOOST_AUTO_TEST_CASE( nat_test )
 {
-    Nat n = O( );
-    //Nat n = S< arg >( S< >( O< >( ) ) );
+
+    Nat n = S( O( ) );//S( S( O( ) ) );
     /*
     BOOST_CHECK( n.match_pattern< S< arg > >( ) );
     BOOST_CHECK( simple_match( n, pattern_tester< S< S< O<> > > >::tester_helper( ) ) );

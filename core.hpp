@@ -40,11 +40,15 @@ namespace algebraic_data_type
     }
 
     template< typename adt_type, size_t which, typename ... TR >
-    auto make_adt( std::tuple< TR ... > && tr )
-    { return adt_type( std::make_pair( boost::mpl::int_< which >( ), std::forward< std::tuple< TR ... > >( tr ) ) ); }
+    auto make_adt_r( std::tuple< TR ... > && tr )
+    { return adt_type( std::make_pair( boost::mpl::int_< which >( ), std::move( tr ) ) ); }
+
+    template< typename adt_type, size_t which, typename ... TR >
+    auto make_adt_l( const std::tuple< TR ... > & tr )
+    { return adt_type( std::make_pair( boost::mpl::int_< which >( ), tr ) ); }
 
     template< typename adt_type, size_t which >
-    auto constructor( ) { return make_adt< adt_type, which >( std::make_tuple( ) ); }
+    auto constructor( ) { return make_adt_r< adt_type, which >( std::make_tuple( ) ); }
 
     struct use_in_match { } uim;
     template< typename adt_type, size_t which >
@@ -57,7 +61,7 @@ namespace algebraic_data_type
                 []( const std::true_type &, auto && )
                 { return constructor_indicator< adt_type, which, std::decay_t< T >, std::decay_t< TR > ... >( ); },
                 []( const std::false_type &, auto && tu )
-                { return make_adt< adt_type, which >( static_cast< decltype( tu ) && >( tu ) ); } )
+                { return make_adt_r< adt_type, which >( std::forward< decltype( tu ) && >( tu ) ); } )
                 ( std::integral_constant< bool, is_match_expression< T >( ) >( ),
                   std::make_tuple( std::forward< T >( t ), std::forward< TR >( tr ) ... ) );
     }

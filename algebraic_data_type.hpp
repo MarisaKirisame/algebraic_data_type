@@ -6,5 +6,5 @@
 #define DECLARE_CONSTRUCTOR( ADT, WHICH, NAME, UNUSED ) \
     template< typename ... UNUSED > \
     auto NAME( UNUSED && ... UNUSED0 ) { return constructor< ADT, WHICH >( std::forward< UNUSED >( UNUSED0 ) ... ); }
-    typedef std::tuple<> unit; //Fuck void
+    typedef std::tuple< > unit; //Fuck void
 #endif // ALGEBRAIC_DATA_TYPE_HPP
