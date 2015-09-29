@@ -113,25 +113,38 @@ namespace algebraic_data_type
     template< typename ... match_expression > struct any_tester;
     struct recursive_indicator { };
 
-    struct to_variant
+    struct to_variant_helper_helper
     {
-        template< typename T, typename ... TR >
-        struct apply
-        {
-            struct get
-            {
-                template< typename ... TT >
-                struct apply { typedef boost::variant< TT ... > type; };
-            };
-            typedef typename
-            boost::mpl::eval_if_c
-            <
-                boost::mpl::size< T >::value == 0,
-                boost::mpl::apply< get, TR ... >,
-                boost::mpl::apply< to_variant, typename boost::mpl::pop_front< T >::type, typename boost::mpl::front< T >::type, TR ... >
-            >::type type;
-        };
+        template< typename ... T >
+        struct apply { typedef boost::variant< T ... > type; };
     };
+
+    template< typename T >
+    typename std::add_rvalue_reference< T >::type bottom( ) noexcept { return bottom< T >( ); }
+
+    template< typename T, typename ... RST >
+    auto to_variant_helper( const T & t, const RST & ... r )
+    {
+        return common::make_expansion(
+                    []( std::true_type, const auto &, const auto & f )
+                    {
+                        typedef std::decay_t< decltype( f ) > F;
+                        return bottom< typename F::template apply< RST ... >::type >( );
+                    },
+                    [&]( std::false_type, const auto & tt, const auto & )
+                    {
+                        typedef std::decay_t< decltype( tt ) > TT;
+                        return
+                            to_variant_helper(
+                                bottom< typename boost::mpl::pop_front< TT >::type >( ),
+                                bottom< typename boost::mpl::front< TT >::type >( ),
+                                r ... );
+                    } )
+                ( std::integral_constant< bool, boost::mpl::size< T >::value == 0 >( ), t, to_variant_helper_helper( ) );
+    }
+
+    template< typename T >
+    struct to_variant { typedef std::decay_t< decltype( to_variant_helper( std::declval< T >( ) ) ) > type; };
 
     template< typename SELF_TYPE, typename T >
     struct unfold_recursive_wrapper { typedef T type; }; //Open: Add more specialization to deal with different case.
@@ -222,7 +235,7 @@ namespace algebraic_data_type
             };
         };
         typedef typename boost::mpl::fold< boost::mpl::vector< TR ... >, boost::mpl::vector< >, add_pair >::type variant_arg_type;
-        typename to_variant::template apply< variant_arg_type >::type data;
+        typename to_variant< variant_arg_type >::type data;
 
         algebraic_data_type( const decltype( data ) & d ) : data( d ) { }
         algebraic_data_type( decltype( data ) && d ) : data( std::move( d ) ) { }
