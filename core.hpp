@@ -110,6 +110,7 @@ namespace algebraic_data_type
     template< typename T > struct pattern_matcher;
     template< typename ... match_expression > struct multi_matcher;
     template< typename ... match_expression > struct multi_tester;
+    template< typename ... match_expression > struct any_tester;
     struct recursive_indicator { };
 
     struct to_variant
@@ -167,6 +168,38 @@ namespace algebraic_data_type
     template< typename SELF_TYPE, typename T >
     struct desugar { typedef typename wrap_tuple< typename unfold_recursive_wrapper< SELF_TYPE, T >::type >::type type; };
 
+    template< typename F, typename ... MATCH_EXP > struct with_match { F f; };
+
+    template< typename F >
+    struct with_helper
+    {
+        template< typename T, typename ... TR > struct apply
+        {
+            struct get
+            {
+                template< typename ... TT >
+                struct apply { typedef with_match< F, TT ... > type; };
+            };
+            typedef typename
+            boost::mpl::eval_if_c
+            <
+                boost::mpl::size< T >::value == 0,
+                boost::mpl::apply< get, TR ... >,
+                boost::mpl::apply< with_helper< F >, typename boost::mpl::pop_front< T >::type, typename boost::mpl::front< T >::type, TR ... >
+            >::type type;
+        };
+    };
+
+    template< typename ... T >
+    auto with( const T & ... t )
+    {
+        typedef std::tuple< T ... > tt;
+        constexpr auto last_index = std::tuple_size< tt >::value - 1;
+        return typename
+           with_helper< typename std::tuple_element< last_index, tt >::type >::template
+                apply< typename boost::mpl::pop_back< boost::mpl::vector< T ... > >::type >::type { std::get< last_index >( std::tie( t ... ) ) };
+    }
+
     template< typename ... TR >
     struct algebraic_data_type
     {
@@ -212,10 +245,15 @@ namespace algebraic_data_type
         };
 
         template< typename T >
-        bool match_pattern( T && ) const { return pattern_tester< std::decay_t< T > >::match_pattern( * this ); }
+        bool match_pattern( T && ) const { return pattern_tester< std::decay_t< T > >::match_pattern( *this ); }
 
         template< typename ... MATCH_EXP, typename F >
-        auto match( const F & f, const MATCH_EXP & ... ) const { return pattern_matcher< multi_matcher< MATCH_EXP ... > >::match( *this, f ); }
+        auto match( const with_match< F, MATCH_EXP ... > & wm ) const
+        { return pattern_matcher< multi_matcher< MATCH_EXP ... > >::match( *this, wm.f ); }
+
+        template< typename ... MATCH_EXP, typename F, typename ... RST >
+        auto match( const with_match< F, MATCH_EXP ... > & fst, const RST & ... rst ) const
+        { return pattern_tester< any_tester< MATCH_EXP ... > >::match_pattern( *this ) ? match( fst ) : match( rst ... ); }
     };
 
     template< typename T >
@@ -228,10 +266,6 @@ namespace algebraic_data_type
 
     template< typename T >
     auto extract_recursive_wrapper( const T & t ) { return recursive_wrapper_extractor< T >( )( t ); }
-
-    template< size_t, typename F >
-    auto expand_tuple_inner( const F & f, const std::tuple< > & )
-    { return f( ); }
 
     template< size_t nth, typename F, typename ... T, typename ... REST >
     auto expand_tuple_inner( const F & f, const std::tuple< T ... > & t, const REST & ... r )

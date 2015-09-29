@@ -18,11 +18,12 @@ BOOST_AUTO_TEST_CASE( nat_test )
     BOOST_CHECK( n.match_pattern( S( arg ) ) );
     BOOST_CHECK( (
         n.match(
-            common::make_expansion(
-                []( const Nat & n ) { return simple_match( n, [](const auto &, const auto &) { return true; } ); },
-                []( ) { return false; } ),
+            with(
                 S( S( arg ) ),
-                O( uim ) ) ) );
+                O( uim ),
+                common::make_expansion(
+                    []( const Nat & n ) { return simple_match( n, [](const auto &, const auto &) { return true; } ); },
+                    []( ) { return false; } ) ) ) ) );
 }
 
 typedef algebraic_data_type< unit , unit > Bool;
@@ -33,7 +34,9 @@ BOOST_AUTO_TEST_CASE( bool_test )
     Bool b = True( );
     BOOST_CHECK( b.match_pattern( wildstar ) );
     BOOST_CHECK( b.match_pattern( True( uim ) ) );
-    BOOST_CHECK( ( b.match( []( ) { return true; }, False( uim ), True( uim ) ) ) );
+    BOOST_CHECK( ! ( b.match(
+        with( False( uim ), []( ) { return true; } ),
+        with( True( uim ), []( ) { return false; } ) ) ) );
 }
 
 typedef algebraic_data_type< std::tuple< bool, bool, bool > > tri_bool;
@@ -41,7 +44,7 @@ DECLARE_CONSTRUCTOR( tri_bool, 0, tb, T )
 BOOST_AUTO_TEST_CASE( tri_bool_test )
 {
     tri_bool p = tb( true, false, false );
-    BOOST_CHECK( ( p.match( []( bool l, bool r ) { return l && ! r; }, tb( arg, arg, wildstar) ) ) );
+    BOOST_CHECK( ( p.match( with( tb( arg, arg, wildstar ), []( bool l, bool r ) { return l && ! r; } ) ) ) );
 }
 
 typedef algebraic_data_type< std::tuple< bool, recursive_indicator >, unit > bl;
@@ -50,7 +53,7 @@ DECLARE_CONSTRUCTOR( bl, 0, cons, t )
 BOOST_AUTO_TEST_CASE( bl_test )
 {
     bl l = cons( true, nil( ) );
-    BOOST_CHECK( ( l.match( []( bool b, const bl & ){ return b; }, cons( arg, arg ) ) ) );
+    BOOST_CHECK( ( l.match( with( cons( arg, arg ), []( bool b, const bl & ){ return b; } ) ) ) );
 }
 
 typedef algebraic_data_type< std::tuple< Bool, Bool > > meow;
@@ -58,6 +61,6 @@ DECLARE_CONSTRUCTOR( meow, 0, Meow, t )
 BOOST_AUTO_TEST_CASE( meow_test )
 {
     meow MEOW = Meow( True( ), False( ) );
-    BOOST_CHECK( ( MEOW.match( []( ) { return true; }, Meow( True( uim ), False( uim ) ) ) ) );
+    BOOST_CHECK( ( MEOW.match( with( Meow( True( uim ), False( uim ) ), []( ) { return true; } ) ) ) );
 }
 #endif // TEST_HPP

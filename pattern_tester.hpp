@@ -90,5 +90,21 @@ namespace algebraic_data_type
                     pattern_tester< multi_tester< REST ... > >::match_pattern( tuple_pop( t ) );
         }
     };
+
+    template< typename FIRST, typename ... REST >
+    struct pattern_tester< any_tester< FIRST, REST ... > >
+    {
+        template< typename T >
+        static bool match_pattern( const T & t )
+        { return pattern_tester< FIRST >::match_pattern( t ) || pattern_tester< any_tester< REST ... > >::match_pattern( t ); }
+    };
+
+    template< >
+    struct pattern_tester< any_tester< > >
+    {
+        template< typename T >
+        static bool match_pattern( const T & )
+        { return false; }
+    };
 }
 #endif // PATTERN_TESTER_HPP
