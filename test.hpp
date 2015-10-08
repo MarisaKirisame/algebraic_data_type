@@ -44,15 +44,15 @@ BOOST_AUTO_TEST_CASE( tri_bool_test )
     BOOST_CHECK( ( p.match( with( tb( arg, arg, wildstar ), []( bool l, bool r ) { return l && ! r; } ) ) ) );
 }
 
+DECLARE_ADT( bl, ((cons,bool,recursive_indicator), (nil)), t )
+
 BOOST_AUTO_TEST_CASE( bl_test )
 {
-    //std::cout << BOOST_PP_STRINGIZE( ( DECLARE_ADT( bl, ((cons,bool), (nil,unit)), t ) ) );
-    //bl l = cons( true, nil( ) );
-    //BOOST_CHECK( ( l.match( with( cons( arg, arg ), []( bool b, const bl & ){ return b; } ) ) ) );
+    bl l = cons( true, nil( ) );
+    BOOST_CHECK( ( l.match( with( cons( arg, arg ), []( bool b, const bl & ){ return b; } ) ) ) );
 }
 
-typedef algebraic_data_type< std::tuple< Bool, Bool > > meow;
-DECLARE_CONSTRUCTOR( meow, 0, Meow, t )
+DECLARE_ADT( meow, ((Meow, std::tuple< Bool, Bool >)), t )
 BOOST_AUTO_TEST_CASE( meow_test )
 {
     meow MEOW = Meow( True( ), False( ) );
