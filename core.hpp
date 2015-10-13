@@ -84,7 +84,7 @@ namespace algebraic_data_type
     auto constructor_variant( T && t ) { return constructor_variant_getter< T >( )( std::forward< T >( t ) ); }
 
     template< typename T >
-    struct strip_recursive_wrapper { typedef T type; };
+    struct strip_recursive_wrapper { typedef T type; }; //Open: Add more specialization to deal with different case.
 
     template< typename T >
     struct strip_recursive_wrapper< boost::recursive_wrapper< T > > { typedef T type; };
@@ -176,8 +176,12 @@ namespace algebraic_data_type
             type;
     };
 
+    template< typename SELF_TYPE, typename T >
+    struct unfold_recursive_wrapper< SELF_TYPE, std::reference_wrapper< T > >
+    { typedef std::reference_wrapper< typename unfold_recursive_wrapper< SELF_TYPE, T >::type > type; };
+
     template< typename T >
-    struct wrap_tuple { typedef std::tuple< T > type; }; //Open: Add more specialization to deal with different case.
+    struct wrap_tuple { typedef std::tuple< T > type; };
 
     template< typename ... T >
     struct wrap_tuple< std::tuple< T ... > > { typedef std::tuple< T ... > type; };
@@ -278,11 +282,21 @@ namespace algebraic_data_type
     { T operator ( )( const T & t ) const { return t; } };
 
     template< typename T >
+    auto extract_recursive_wrapper( const T & t ) { return recursive_wrapper_extractor< T >( )( t ); }
+
+    template< typename T > //Open: Add more specialization to deal with different case.
     struct recursive_wrapper_extractor< boost::recursive_wrapper< T > >
     { T operator ( )( const boost::recursive_wrapper< T > & t ) const { return t.get( ); } };
 
     template< typename T >
-    auto extract_recursive_wrapper( const T & t ) { return recursive_wrapper_extractor< T >( )( t ); }
+    std::reference_wrapper< T > make_reference_wrapper( T & t ) { return t; }
+
+    template< typename T >
+    struct recursive_wrapper_extractor< std::reference_wrapper< boost::recursive_wrapper< T > > >
+    {
+        auto operator ( )( const std::reference_wrapper< boost::recursive_wrapper< T > > & t ) const
+        { return make_reference_wrapper( t.get( ).get( ) ); }
+    };
 
     template< size_t nth, typename F, typename ... T, typename ... REST >
     auto expand_tuple_inner( const F & f, const std::tuple< T ... > & t, const REST & ... r )
