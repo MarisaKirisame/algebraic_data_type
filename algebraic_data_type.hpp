@@ -14,21 +14,13 @@
 #define DECLARE_CONSTRUCTORS( ADT, NAMES, FRESH ) \
     BOOST_PP_SEQ_FOR_EACH_I_R( 1, DECLARE_CONSTRUCTORS_AUX, (ADT)(FRESH), BOOST_PP_TUPLE_TO_SEQ( NAMES ) )
 
-#define SEQ_OBJECT( SEQ ) \
-    BOOST_PP_TUPLE_REM_CTOR( \
-        BOOST_PP_IF( BOOST_PP_EQUAL( 1, BOOST_PP_SEQ_SIZE( SEQ ) ), ( BOOST_PP_SEQ_ELEM( 0, SEQ ) ), ( std::tuple< BOOST_PP_SEQ_ENUM( SEQ ) > ) ) )
-
 #define DECLARE_ADT_AUX_0( data, elem ) BOOST_PP_TUPLE_ELEM( 0, elem )
 
 #define DECLARE_ADT_AUX_1( data, elem ) \
     BOOST_PP_IF( BOOST_PP_EQUAL( BOOST_PP_TUPLE_SIZE( elem ), 1 ), (unit), \
         BOOST_PP_TUPLE_POP_FRONT( elem ) )
 
-#define DECLARE_ADT_AUX_2( data, i, elem ) \
-    BOOST_PP_COMMA_IF( BOOST_PP_GREATER( i, 0 ) ) \
-    BOOST_PP_IF( BOOST_PP_EQUAL( BOOST_PP_TUPLE_SIZE( elem ), 1 ), , std::tuple< ) \
-    BOOST_PP_TUPLE_ENUM( elem ) \
-    BOOST_PP_IF( BOOST_PP_EQUAL( BOOST_PP_TUPLE_SIZE( elem ), 1 ), , > )
+#define DECLARE_ADT_AUX_2( data, i, elem ) BOOST_PP_COMMA_IF( BOOST_PP_GREATER( i, 0 ) ) std::tuple< BOOST_PP_TUPLE_ENUM( elem ) >
 
 #define TUPLE_TRANSFORM_AUX( r, count, data ) \
     BOOST_PP_TUPLE_ELEM( 0, data )( BOOST_PP_TUPLE_ELEM( 1, data ), BOOST_PP_TUPLE_ELEM( count, BOOST_PP_TUPLE_ELEM( 2, data ) ) ),

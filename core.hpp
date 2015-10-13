@@ -92,6 +92,10 @@ namespace algebraic_data_type
     template< typename ... T >
     struct strip_recursive_wrapper< std::tuple< T ... > > { typedef std::tuple< typename strip_recursive_wrapper< T >::type ... > type; };
 
+    template< typename T >
+    struct strip_recursive_wrapper< std::reference_wrapper< T > >
+    { typedef std::reference_wrapper< typename strip_recursive_wrapper< T >::type > type; };
+
     template< typename L, typename R >
     struct strip_recursive_wrapper< std::pair< L, R > >
     { typedef std::pair< typename strip_recursive_wrapper< L >::type, typename strip_recursive_wrapper< R >::type > type; };

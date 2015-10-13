@@ -36,8 +36,7 @@ BOOST_AUTO_TEST_CASE( bool_test )
         with( True( uim ), []( ) { return false; } ) ) ) );
 }
 
-typedef algebraic_data_type< std::tuple< bool, bool, bool > > tri_bool;
-DECLARE_CONSTRUCTOR( tri_bool, 0, tb, T )
+DECLARE_ADT( tri_bool, ((tb, std::tuple< bool, bool, bool>)), t );
 BOOST_AUTO_TEST_CASE( tri_bool_test )
 {
     tri_bool p = tb( true, false, false );
